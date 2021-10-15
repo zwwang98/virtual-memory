@@ -26,8 +26,7 @@ void* writeAndReadMem(void* testInfo) {
 
         if (addr == -1) kernelPanic(testReadWriteInfo->thread, addr);
         bzero(info.outputData, info.writeSize);
-        int readAddr = info.writeToHeap ? addr + info.readOffset : addr - info.readOffset;
-        readFromAddr(testReadWriteInfo->thread, readAddr,
+        readFromAddr(testReadWriteInfo->thread, addr + info.readOffset,
                 info.writeSize-info.readOffset, info.outputData);
     }
     return NULL;

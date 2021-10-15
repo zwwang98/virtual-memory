@@ -78,7 +78,7 @@ void testReadStackPartialPage() {
     Thread* thread = createThread();
     void* data = createRandomData(PAGE_SIZE*3/4);
     int addr = allocateAndWriteStackData(thread, data, PAGE_SIZE, PAGE_SIZE / 2);
-    writeToAddr(thread, addr-(PAGE_SIZE/2), (PAGE_SIZE/4), data+(PAGE_SIZE/2));
+    writeToAddr(thread, addr+(PAGE_SIZE/2), (PAGE_SIZE/4), data+(PAGE_SIZE/2));
 
     void *readData = malloc(PAGE_SIZE*3/4);
     bzero(readData, PAGE_SIZE*3/4);
@@ -90,7 +90,7 @@ void testReadStackPartialPage() {
     TEST_ASSERT_EQUAL_MEMORY(data, readData, PAGE_SIZE/2);
 
     bzero(readData, PAGE_SIZE*3/4);
-    readFromAddr(thread, addr-(PAGE_SIZE/2), PAGE_SIZE/4, readData);
+    readFromAddr(thread, addr+(PAGE_SIZE/2), PAGE_SIZE/4, readData);
     TEST_ASSERT_EQUAL_MEMORY(data+(PAGE_SIZE/2), readData, PAGE_SIZE/4);
 
     free(data);
@@ -100,7 +100,7 @@ void testReadStackPartialPage() {
 
 void testReadAllStackMem() {
     Thread *thread = createThread();
-    int size = ALL_MEM_SIZE-STACK_END_ADDR-1;
+    int size = ALL_MEM_SIZE-STACK_END_ADDR;
     void *data = createRandomData(size);
     int addr = allocateAndWriteStackData(thread, data, size, size);
     void *readData = malloc(size);

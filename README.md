@@ -1,8 +1,8 @@
 # CS 5600 Assignment 3
 
 ## Overview
-In this assigment you will be implementing virtual memory. You will have to 
-implement pages and physical frames based on the memory model provided. You will 
+In this assigment you will be implementing virtual memory. You will have to
+implement pages and physical frames based on the memory model provided. You will
 also have to deal with multiple processes/threads having their own page tables.
 You will manage a limited physical region of memory and swap pages to disk as necessary.
 Make sure to look at all of the header files in answer to see information about the various
@@ -44,29 +44,22 @@ Do the following to setup:
   ```
     ### Get rid of old version of CMake
     sudo apt-get purge cmake
-    
+
     ## install dependencies
   sudo apt-get install g++ libssl-dev git
-    
+
     ## Download latest CMake
     curl -L https://github.com/Kitware/CMake/releases/download/v3.15.4/cmake-3.15.4.tar.gz -o cmake
     -3.15.4.tar.gz
-    
+
     ## Untar it
     tar -xf cmake-3.15.4.tar.gz
     cd  cmake-3.15.4
-     
+
     .bootstrap
     make
     sudo make install
     sudo ln -s /usr/local/bin/cmake /usr/bin/cmake
-    
-    ##install Unity test framework
-    git clone https://github.com/ThrowTheSwitch/Unity.git
-    cd Unity
-    cmake .
-    make
-    sudo make install
   ```
 
 The above should set up all dependencies. You will also need to add an environment variable UNITY_SRC_DIR and point that to where you cloned Unity. If you are using CLion or VSCode do it in the UI. Otherwise add it to your bash profile or do an export before running CMake.
@@ -82,4 +75,4 @@ To run your program from command line, start in your project directory:
 ## Grading
   - 50% - Tests Passing
   - 25% - Code
-  - 25% - Questions.md 
+  - 25% - Questions.md

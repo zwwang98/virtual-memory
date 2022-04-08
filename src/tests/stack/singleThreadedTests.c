@@ -12,7 +12,7 @@ extern const int ALL_MEM_SIZE;
 
 void testSingleThreadedWriteStackAndReadFullPage() {
     TestReadWriteInfoList *list = getTestList(1);
-    list->readWriteInfoList[0] = createTestReadWriteInfo(PAGE_SIZE, PAGE_SIZE, 0, true);
+    list->readWriteInfoList[0] = createTestReadWriteInfo(PAGE_SIZE, PAGE_SIZE, 0, false);
     pthread_create(&(list->thread->thread), NULL, writeAndReadMem, list);
     destroyThread(list->thread);
     TEST_ASSERT_EQUAL_MEMORY(list->readWriteInfoList[0].inputData, list->readWriteInfoList[0].outputData, PAGE_SIZE);
@@ -21,7 +21,7 @@ void testSingleThreadedWriteStackAndReadFullPage() {
 
 void testSingleThreadedWriteStackAndReadAcrossTwoPages() {
     TestReadWriteInfoList *list = getTestList(1);
-    list->readWriteInfoList[0] = createTestReadWriteInfo(PAGE_SIZE*2, PAGE_SIZE*2, 0, true);
+    list->readWriteInfoList[0] = createTestReadWriteInfo(PAGE_SIZE*2, PAGE_SIZE*2, 0, false);
     pthread_create(&(list->thread->thread), NULL, writeAndReadMem, list);
     destroyThread(list->thread);
     TEST_ASSERT_EQUAL_MEMORY(list->readWriteInfoList[0].inputData, list->readWriteInfoList[0].outputData, PAGE_SIZE);
@@ -56,7 +56,7 @@ void testSingleThreadedWriteStackAndReadPartial() {
 void testSingleThreadedWriteStackAndReadAllStack() {
     TestReadWriteInfoList *list = getTestList(1);
     int size = ALL_MEM_SIZE-STACK_END_ADDR-1;
-    list->readWriteInfoList[0] = createTestReadWriteInfo(size, size,0, true);
+    list->readWriteInfoList[0] = createTestReadWriteInfo(size, size,0, false);
     pthread_create(&(list->thread->thread), NULL, writeAndReadMem, list);
     destroyThread(list->thread);
     TEST_ASSERT_EQUAL_MEMORY(list->readWriteInfoList[0].inputData, list->readWriteInfoList[0].outputData, PAGE_SIZE);

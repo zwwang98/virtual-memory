@@ -7,7 +7,8 @@
 #include "thread.h"
 #include "memory.h"
 
-//#define LOGGING_ON
+// De-comments this line to turn the loggin on.
+#define LOGGING_ON
 
 extern const int PAGE_SIZE;
 const int MAX_BUFFER_SIZE=4096;
@@ -18,12 +19,16 @@ bool panicExpected;
 void kernelPanic(const Thread* thread, int addr) {
     char* buffer = malloc(8192);
     sprintf(buffer, "Kernel panic at addr %x\n", addr);
-    if (thread != NULL) {
-        sprintf(buffer,"Thread id %d\n", thread->threadId);
-    }
-
     logData(buffer);
     flushLog();
+    if (thread != NULL) {
+        sprintf(buffer,"Thread id %d\n", thread->threadId);
+        logData(buffer);
+        // flushLog() makes sure we actually print out what we have in the buffer.
+        // In a multi-theraded env, if we do not flushLog(), we may have things interleaved in the buffer.
+        flushLog();
+    }
+
     free(buffer);
     if (panicExpected) {
         TEST_PASS_MESSAGE("Kernel panicked as expected");

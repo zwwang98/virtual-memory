@@ -1,4 +1,5 @@
 #include "thread.h"
+#include "util.h"
 
 // 4k is the size of a page
 const int PAGE_SIZE= 4*1024;
@@ -18,9 +19,17 @@ int allocateStackMem(Thread *thread, int size) {
 }
 
 void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
+  if (addr < USER_BASE_ADDR) {
+    kernelPanic(thread, addr);
+    return;
+  }
 }
 
 void readFromAddr(Thread* thread, int addr, int size, void* outData) {
+    if (addr < USER_BASE_ADDR) {
+      kernelPanic(thread, addr);
+      return;
+    }
 }
 
 char* getCacheFileName(Thread* thread, int addr) {

@@ -13,6 +13,9 @@ Thread* createThread() {
     ret->threadId = currentThreadId;
     currentThreadId++;
 
+    ret->heapTop = 1024 * 1024;
+    ret->stackBottom = 8 * 1024 * 1024;
+
     return ret;
 }
 

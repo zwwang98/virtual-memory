@@ -9,6 +9,35 @@ cmake --build .
 1. Read everything under `./src`.
 2. `./src/main.c` holds all tests. To turn on the test, de-comment them.
    Tests are in approximately order.
+3. `./answer/memory.c`
+   1. page size.
+      ```
+        // 4k is the size of a page
+        const int PAGE_SIZE= 4*1024;
+      ```
+   2. Everything you store on behalf on threads and the page tables must fit in this 8M memory.
+      ```
+        // A total of 8M exists in memory
+        const int ALL_MEM_SIZE = 8*1024*1024;
+      ```
+    3. So 1M for kernel memory from 0-1M.
+      ```
+        // USER Space starts at 1M
+        const int USER_BASE_ADDR = 1024*1024;
+      ```
+    4. So in total 2M for stack. The bottom is 8M and it goes up at most to 6M.
+      ```
+        // Stack starts at 8M and goes down to 6M
+        const int STACK_END_ADDR = 6*1024*1024;
+      ```
+    5. 1M kernel memory for 2048 pages. So each page has 512 Bytes.
+       1M / 2*1024 pages = 1024 * 1024 Bytes / 2 * 1024 pages = 512 Bytes / page
+      ```
+        // There are total of 2048 pages
+        const int NUM_PAGES = 2*1024;
+      ```
+    6. Heap memory starts from 1M to 6M. In total 5M.
+    7. System total memory 8M = 1M kernel memory + 5M heap + 2M stack.
 
 ## Solution
 ### `RUN_NON_THREADED_HEAP_TESTS` and `RUN_NON_THREADED_STACK_TESTS`

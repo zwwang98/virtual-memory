@@ -11,6 +11,9 @@ typedef struct Thread
 {
     pthread_t thread;
     int threadId;
+
+    int heapTop;
+    int stackBottom;
 } Thread;
 
 /**

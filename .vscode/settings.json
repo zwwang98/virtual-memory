@@ -2,6 +2,7 @@
     "files.associations": {
         "stdlib.h": "c",
         "thread.h": "c",
-        "utils.h": "c"
+        "utils.h": "c",
+        "memorymanagement.h": "c"
     }
 }

@@ -2,6 +2,11 @@
 #define VIRTUALMEMFRAMEWORKC_THREAD_H
 
 #include <pthread.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "MemoryManagement.h"
+#include "PageTableEntry.h"
 
 /**
  * This struct defines a thread, you will have to add to it for all the functionality required. What is provided
@@ -12,8 +17,12 @@ typedef struct Thread
     pthread_t thread;
     int threadId;
 
-    int heapTop;
-    int stackBottom;
+    // start and end of stack / heap
+    int stackTop;  // 8M -> 6M
+    int heapBottom; // 1M -> 6M
+
+    // page table
+    PageTableEntry VPNToPFN[1792];
 } Thread;
 
 /**
@@ -29,4 +38,5 @@ Thread* createThread();
  * @param thread
  */
 void destroyThread(Thread* thread);
+
 #endif //VIRTUALMEMFRAMEWORKC_THREAD_H

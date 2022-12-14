@@ -1,0 +1,22 @@
+2022-12-14 15:05:11,317 INFO o.a.j.u.JMeterUtils: Setting Locale to en_EN
+2022-12-14 15:05:11,333 INFO o.a.j.JMeter: Loading user properties from: /Users/a9527/NEU/cs6650/assignment4/apache-jmeter-5.5/bin/user.properties
+2022-12-14 15:05:11,333 INFO o.a.j.JMeter: Loading system properties from: /Users/a9527/NEU/cs6650/assignment4/apache-jmeter-5.5/bin/system.properties
+2022-12-14 15:05:11,337 INFO o.a.j.JMeter: Copyright (c) 1998-2022 The Apache Software Foundation
+2022-12-14 15:05:11,337 INFO o.a.j.JMeter: Version 5.5
+2022-12-14 15:05:11,337 INFO o.a.j.JMeter: java.version=18.0.1.1
+2022-12-14 15:05:11,337 INFO o.a.j.JMeter: java.vm.name=OpenJDK 64-Bit Server VM
+2022-12-14 15:05:11,337 INFO o.a.j.JMeter: os.name=Mac OS X
+2022-12-14 15:05:11,337 INFO o.a.j.JMeter: os.arch=aarch64
+2022-12-14 15:05:11,337 INFO o.a.j.JMeter: os.version=12.0.1
+2022-12-14 15:05:11,337 INFO o.a.j.JMeter: file.encoding=UTF-8
+2022-12-14 15:05:11,337 INFO o.a.j.JMeter: java.awt.headless=null
+2022-12-14 15:05:11,337 INFO o.a.j.JMeter: Max memory     =1073741824
+2022-12-14 15:05:11,337 INFO o.a.j.JMeter: Available Processors =8
+2022-12-14 15:05:11,342 INFO o.a.j.JMeter: Default Locale=English (EN)
+2022-12-14 15:05:11,342 INFO o.a.j.JMeter: JMeter  Locale=English (EN)
+2022-12-14 15:05:11,343 INFO o.a.j.JMeter: JMeterHome=/Users/a9527/NEU/cs6650/assignment4/apache-jmeter-5.5
+2022-12-14 15:05:11,343 INFO o.a.j.JMeter: user.dir  =/Users/a9527/NEU/cs5600/VirtualFrameworkC
+2022-12-14 15:05:11,343 INFO o.a.j.JMeter: PWD       =/Users/a9527/NEU/cs5600/VirtualFrameworkC
+2022-12-14 15:05:11,343 INFO o.a.j.JMeter: IP: 127.0.0.1 Name: 9527deMacBook-Pro.local FullName: localhost
+2022-12-14 15:05:11,350 INFO o.a.j.JMeter: Loaded icon properties from org/apache/jmeter/images/icon.properties
+2022-12-14 15:05:11,582 INFO o.a.j.JMeterGuiLauncher: Setting LAF to: com.github.weisj.darklaf.DarkLaf:com.github.weisj.darklaf.theme.DarculaTheme

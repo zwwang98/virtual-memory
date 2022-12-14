@@ -25,7 +25,7 @@ cmake --build .
         // USER Space starts at 1M
         const int USER_BASE_ADDR = 1024*1024;
       ```
-    4. So in total 2M for stack. The bottom is 8M and it goes up at most to 6M.
+    4. So in total 2M for stack. The bottom is 8M and it goes down at most to 6M.
       ```
         // Stack starts at 8M and goes down to 6M
         const int STACK_END_ADDR = 6*1024*1024;
@@ -38,6 +38,15 @@ cmake --build .
       ```
     6. Heap memory starts from 1M to 6M. In total 5M.
     7. System total memory 8M = 1M kernel memory + 5M heap + 2M stack.
+4. In `QUESTIONS.md`, the first 8 questions are for virtual memory. They are the most important.
+5. Locking
+   1. Locking is necessary for passing multi-threaded tests.
+   2. Starts from the easy one, like a single lock over everything.
+   3. Reads can run in parallel. Writes cannot run in parallel. While reading, writes should be blocked. So we could introduce some read-write lock as an optimization.
+6. To complete this assignment,
+   1. `malloc()` and `free()` are not allowed on behalf of threads.
+   2. Read every files unser `./src/`.
+   3. Have a copy of the virtual memory lecture pdf on hand. Review the lecture video.
 
 ## Solution
 ### `RUN_NON_THREADED_HEAP_TESTS` and `RUN_NON_THREADED_STACK_TESTS`

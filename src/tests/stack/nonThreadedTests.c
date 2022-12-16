@@ -23,9 +23,36 @@ void testWriteIntoKernelFails() {
 }
 
 void testReadStackFullPage() {
+    char buffer[1024];
+    sprintf(buffer, "\n[testReadStackFullPage] Test starts.\n");
+    logData(buffer);
+    flushLog();
+
+    int printNum = 5;
+
     Thread *thread = createThread();
     void *data = createRandomData(PAGE_SIZE);
+    sprintf(buffer, "\n[testReadStackFullPage] Print out first %d of data: ", printNum);
+    logData(buffer);
+    flushLog();
+    int y = 0;
+    char *dataPtr = data + y;
+    for (int i = 0; i < printNum; i++) {
+        sprintf(buffer, "0x%x, ", *(dataPtr++));
+        logData(buffer);
+        flushLog();
+        if (i == printNum - 1) {
+            sprintf(buffer, "\n\n");
+            logData(buffer);
+            flushLog();
+        }
+    }
+
     int addr = allocateAndWriteStackData(thread, data, PAGE_SIZE, PAGE_SIZE);
+    sprintf(buffer, "[testReadStackFullPage] Stack starts at %d.\n", addr);
+    logData(buffer);
+    flushLog();
+
     void *readData = malloc(PAGE_SIZE);
     bzero(readData, PAGE_SIZE);
     readFromAddr(thread, addr, PAGE_SIZE, readData);
@@ -35,6 +62,9 @@ void testReadStackFullPage() {
     free(data);
     free(readData);
     destroyThread(thread);
+    sprintf(buffer, "\n[testReadStackFullPage] Test starts.\n");
+    logData(buffer);
+    flushLog();
 }
 
 void testReadStackAcrossTwoPages() {

@@ -3,6 +3,20 @@
         "stdlib.h": "c",
         "thread.h": "c",
         "utils.h": "c",
-        "memorymanagement.h": "c"
+        "memorymanagement.h": "c",
+        "singlethreadedtests.h": "c",
+        "__hash_table": "c",
+        "__split_buffer": "c",
+        "array": "c",
+        "bitset": "c",
+        "hash_map": "c",
+        "initializer_list": "c",
+        "iterator": "c",
+        "list": "c",
+        "string": "c",
+        "string_view": "c",
+        "unordered_map": "c",
+        "utility": "c",
+        "vector": "c"
     }
 }

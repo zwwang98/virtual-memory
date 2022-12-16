@@ -8,6 +8,7 @@ extern const int NUM_PAGES;
 extern const int ALL_MEM_SIZE;
 extern const int USER_BASE_ADDR;
 extern const int STACK_END_ADDR;
+extern const int NUM_USER_SPACE_PAGES;
 
 Thread* createThread() {
   Thread* ret = (Thread*) malloc(sizeof(Thread));
@@ -18,6 +19,10 @@ Thread* createThread() {
 
   ret->stackTop = ALL_MEM_SIZE;
   ret->heapBottom = USER_BASE_ADDR;
+
+  for (int i = 0; i < NUM_USER_SPACE_PAGES; i++) {
+    ret->VPNToPFN[i].physicalFrameNumber = -1;
+  }
 
   return ret;
 }

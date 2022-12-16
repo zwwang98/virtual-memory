@@ -97,26 +97,21 @@ int allocateStackMem(Thread *thread, int size) {
   return thread->stackTop;
 }
 
-/**
- * @brief Helper function to log and print out something to the console.
- * 
- * @param buffer Given character buffer.
- * @param message Given message.
- */
-void logHelper(char* buffer, char* message);
-
 void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
   char buffer[1024];
 
-  // write to kernel memory, call kernelPanic()
   if (addr < USER_BASE_ADDR) {
+    // write to kernel memory, call kernelPanic()
+    printf(buffer, "Writting to kernel space is not allowed.\n");
+    logData(buffer);
+    flushLog();
     kernelPanic(thread, addr);
     return;
-  }
-
-  // address out of range
-  if (addr >= ALL_MEM_SIZE) {
-    logHelper(buffer, "Address is out of range.");
+  } else if (addr >= ALL_MEM_SIZE) {
+    // address out of range
+    sprintf(buffer, "Address is out of range.");
+    logData(buffer);
+    flushLog();
     return;
   }
 
@@ -126,15 +121,18 @@ void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
 void readFromAddr(Thread* thread, int addr, int size, void* outData) {
   char buffer[1024];
 
-  // read to kernel memory, call kernelPanic()
   if (addr < USER_BASE_ADDR) {
+    // read to kernel memory, call kernelPanic()
+    printf(buffer, "Writting to kernel space is not allowed.\n");
+    logData(buffer);
+    flushLog();
     kernelPanic(thread, addr);
     return;
-  }
-
-  // address out of range
-  if (addr >= ALL_MEM_SIZE) {
-    logHelper(buffer, "Address is out of range.");
+  } else if (addr >= ALL_MEM_SIZE) {
+    // address out of range
+    sprintf(buffer, "Address is out of range.");
+    logData(buffer);
+    flushLog();
     return;
   }
 
@@ -143,10 +141,4 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
 
 char* getCacheFileName(Thread* thread, int addr) {
   return NULL;
-}
-
-void logHelper(char* buffer, char* message) {
-  sprintf(buffer, message);
-  logData(buffer);
-  flushLog();
 }

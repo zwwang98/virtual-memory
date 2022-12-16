@@ -101,6 +101,9 @@ void allocateFrameToPage(Thread* thread, int vpn) {
 
 int allocateHeapMem(Thread *thread, int size) {
   char buffer[1024];
+  sprintf(buffer, "[allocateHeapMem] Remaimned memory is enough, do not need another page.\n");
+  logData(buffer);
+  flushLog();
   // unable to allocate size memory
   int availableMemory = STACK_END_ADDR - thread->heapBottom;
   if (availableMemory < size) {
@@ -112,6 +115,9 @@ int allocateHeapMem(Thread *thread, int size) {
 
   if (prePageRemainedMemory >= size) {
     // if remaimned memory is enough, do not need another page
+    sprintf(buffer, "[allocateHeapMem] Remaimned memory is enough, do not need another page.\n");
+    logData(buffer);
+    flushLog();
   } else {
     // else, allocate more pages
     sprintf(buffer, "[allocateHeapMem] To allocate memory.\n");
@@ -138,6 +144,11 @@ int allocateHeapMem(Thread *thread, int size) {
 }
 
 int allocateStackMem(Thread *thread, int size) {
+  char buffer[1024];
+  sprintf(buffer, "[allocateStackMem] Start allocating memory to stack.\n");
+  logData(buffer);
+  flushLog();
+
   // unable to allocate size memory
   int availableMemory = thread->stackTop - STACK_END_ADDR;
   if (availableMemory < size) {
@@ -145,10 +156,17 @@ int allocateStackMem(Thread *thread, int size) {
   }
 
   // find previous page's remained memory
-  int prePageRemainedMemory = PAGE_SIZE - thread->stackTop % PAGE_SIZE;
+  int existingStackMemory = ALL_MEM_SIZE - thread->stackTop + 1;
+  int prePageRemainedMemory = (PAGE_SIZE - ALL_MEM_SIZE - thread->stackTop) % PAGE_SIZE;
+  sprintf(buffer, "[allocateStackMem] {thread->stackTop: %d}, {prePageRemainedMemory: %d}.\n", thread->stackTop, prePageRemainedMemory);
+  logData(buffer);
+  flushLog();
 
   if (prePageRemainedMemory >= size) {
     // if remaimned memory is enough, do not need another page
+    sprintf(buffer, "[allocateStackMem] Remaimned memory is enough, do not need another page.\n");
+    logData(buffer);
+    flushLog();
   } else {
     // else, allocate more pages
     allocateMemory(thread, thread->stackTop - size, thread->stackTop);
@@ -156,6 +174,10 @@ int allocateStackMem(Thread *thread, int size) {
 
   // able to allocate size memory
   thread->stackTop -= size;
+
+  sprintf(buffer, "[allocateStackMem] End allocating memory to stack.\n");
+  logData(buffer);
+  flushLog();
 
   return thread->stackTop;
 }

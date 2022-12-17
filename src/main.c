@@ -15,8 +15,8 @@
 #define RUN_NON_THREADED_STACK_TESTS
 
 // Phase 1.1
-// #define RUN_SINGLE_THREADED_HEAP_TESTS
-// #define RUN_SINGLE_THREADED_STACK_TESTS
+#define RUN_SINGLE_THREADED_HEAP_TESTS
+#define RUN_SINGLE_THREADED_STACK_TESTS
 
 // // Phase 2
 // #define RUN_MULTI_THREADED_HEAP_TESTS
@@ -45,16 +45,16 @@ int main(void) {
     // RUN_TEST(testWriteIntoKernelFails);
     #ifdef RUN_NON_THREADED_HEAP_TESTS
     RUN_TEST(testReadHeapFullPage); // use 1 page
-    // RUN_TEST(testReadHeapAcrossTwoPages);  // use 2 page
-    // RUN_TEST(testReadHeapMiddleOfPage);  // use 1/2 page + 1/4 page
-    // RUN_TEST(testReadHeapPartialPage);  // use 3/4 page
+    RUN_TEST(testReadHeapAcrossTwoPages);  // use 2 page
+    RUN_TEST(testReadHeapMiddleOfPage);  // use 1/2 page + 1/4 page
+    RUN_TEST(testReadHeapPartialPage);  // use 3/4 page
     RUN_TEST(testReadAllHeapMem);  // use all heap
     #endif
     #ifdef RUN_NON_THREADED_STACK_TESTS
-    // RUN_TEST(testReadStackFullPage);
-    // RUN_TEST(testReadStackAcrossTwoPages);
-    // RUN_TEST(testReadStackMiddleOfPage);
-    // RUN_TEST(testReadStackPartialPage);
+    RUN_TEST(testReadStackFullPage);
+    RUN_TEST(testReadStackAcrossTwoPages);
+    RUN_TEST(testReadStackMiddleOfPage);
+    RUN_TEST(testReadStackPartialPage);
     RUN_TEST(testReadAllStackMem);
     #endif
     #ifdef RUN_SINGLE_THREADED_HEAP_TESTS

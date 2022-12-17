@@ -1,5 +1,6 @@
 #include "thread.h"
 #include "./utils.h"
+#include "FrameTable.h"
 #include <string.h>
 
 // 4k is the size of a page
@@ -23,14 +24,14 @@ const int SPACE_PER_PAGE = 512;
 char RAW_SYSTEM_MEMORY_ACCESS[8 * 1024 * 1024];
 void *SYSTEM_MEMORY = RAW_SYSTEM_MEMORY_ACCESS;
 
-typedef struct FrameEntry {
-  int threadId;
-  int vpn;
-  bool isUsed;
-} FrameEntry;
+// typedef struct FrameEntry {
+//   int threadId;
+//   int vpn;
+//   bool isUsed;
+// } FrameEntry;
 
 // frame table
-FrameEntry PFNTable[1792];
+FrameEntry PFNTable[NUM_PAGES];
 
 int bitToPrint = 5;
 int startIdx = 2088960;

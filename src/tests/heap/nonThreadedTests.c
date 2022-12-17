@@ -23,9 +23,20 @@ void testWriteHeapBeyondEndOfPage() {
 }
 
 void testReadHeapFullPage() {
+    char buffer[1024];
+    sprintf(buffer, "\n[testReadHeapFullPage] Test starts.\n");
+    logData(buffer);
+    flushLog();
+
     Thread *thread = createThread();
     void *data = createRandomData(PAGE_SIZE);
+
     int addr = allocateAndWriteHeapData(thread, data, PAGE_SIZE, PAGE_SIZE);
+    sprintf(buffer, "\n[testReadHeapFullPage] {addr: %d}.\n", addr);
+    logData(buffer);
+    flushLog();
+
+
     void *readData = malloc(PAGE_SIZE);
     bzero(readData, PAGE_SIZE);
     readFromAddr(thread, addr, PAGE_SIZE, readData);
@@ -34,6 +45,10 @@ void testReadHeapFullPage() {
     free(data);
     free(readData);
     destroyThread(thread);
+
+    sprintf(buffer, "\n[testReadHeapFullPage] Test ends.\n\n");
+    logData(buffer);
+    flushLog();
 }
 
 void testReadHeapAcrossTwoPages() {

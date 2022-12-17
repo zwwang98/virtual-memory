@@ -20,7 +20,7 @@ Thread* createThread() {
   ret->stackTop = ALL_MEM_SIZE;
   ret->heapBottom = USER_BASE_ADDR;
 
-  for (int i = 0; i < NUM_USER_SPACE_PAGES; i++) {
+  for (int i = 0; i < NUM_PAGES; i++) {
     ret->VPNToPFN[i].physicalFrameNumber = -1;
   }
 

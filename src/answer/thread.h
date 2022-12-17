@@ -8,6 +8,8 @@
 #include "MemoryManagement.h"
 #include "PageTableEntry.h"
 
+extern const int NUM_PAGES;
+
 /**
  * This struct defines a thread, you will have to add to it for all the functionality required. What is provided
  * is the minimal amount need for the tests to compile and run.
@@ -22,7 +24,7 @@ typedef struct Thread
     int heapBottom; // 1M -> 6M
 
     // page table
-    PageTableEntry VPNToPFN[1792];
+    PageTableEntry VPNToPFN[2048];
 } Thread;
 
 /**

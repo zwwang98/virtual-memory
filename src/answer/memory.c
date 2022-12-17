@@ -32,9 +32,23 @@ typedef struct FrameEntry {
 // frame table
 FrameEntry PFNTable[1792];
 
+int bitToPrint = 5;
+int startIdx = 2088960;
+int startLogPageNum = 0;
+
+void printOutAllUnusedFrameIntervals();
+void printOutAllUsedFrameThreadId();
+void evictPage();
+
 // assign frames to thread to
-void allocateMemory(Thread *thread, int begin, int end) {
+void allocateMemory(Thread *thread, int begin, int end, int size) {
   char buffer[1024];
+  sprintf(buffer, "\n[allocateMemory] Start to allocate {size: %d} memory from %d to %d.\n", size, begin, end);
+  logData(buffer);
+  flushLog();
+
+  printOutAllUnusedFrameIntervals();
+  printOutAllUsedFrameThreadId();
 
   int beginPageNum = begin / PAGE_SIZE;
   int endPageNum = end / PAGE_SIZE;
@@ -45,15 +59,16 @@ void allocateMemory(Thread *thread, int begin, int end) {
   flushLog();
 
 
-  int x = 5;
+  int x = bitToPrint;
 
   // assign frames from beginPageNum to endPageNum
-  for (int i = 0; i < 1792; i++) {
+  // frame 0-255 == 1MB, saved for kernel space
+  for (int i = 256; i < 2048; i++) {
     while (curPageNum <= endPageNum && thread->VPNToPFN[curPageNum].physicalFrameNumber != -1) {
-      curPageNum++;
-      sprintf(buffer, "[allocateMemory] Skip assigning frame to thread %d page %d, because it already has a frame  %d.\n", thread->threadId, curPageNum, thread->VPNToPFN[curPageNum]);
+      sprintf(buffer, "[allocateMemory] Skip assigning frame to thread %d page {vpn: %d}, because it already has a frame  %d.\n", thread->threadId, curPageNum, thread->VPNToPFN[curPageNum]);
       logData(buffer);
       flushLog();
+      curPageNum++;
     }
     if (curPageNum > endPageNum) {
       break;
@@ -69,12 +84,10 @@ void allocateMemory(Thread *thread, int begin, int end) {
       thread->VPNToPFN[curPageNum].accessed = 1;
 
       // // log
-      if (curPageNum >= 1531) {
-        if (x-- > 0) {
-          sprintf(buffer, "[allocateMemory] Assign frame %d to thread %d page %d.\n", i, thread->threadId, curPageNum);
-          logData(buffer);
-          flushLog();
-        }
+      if (curPageNum >= startLogPageNum && x-- > 0) {
+        sprintf(buffer, "[allocateMemory] {line: %d} Assign frame {pfn: %d} to thread %d page {vpn: %d}.\n", __LINE__, i, thread->threadId, curPageNum);
+        logData(buffer);
+        flushLog();
       }
 
       curPageNum++;
@@ -86,6 +99,12 @@ void allocateMemory(Thread *thread, int begin, int end) {
   logData(buffer);
   flushLog();
 
+  if (curPageNum <= endPageNum) {
+    sprintf(buffer, "[allocateMemory] Pages [%d, %d] are not allocated frames because there is no unused frame. We may need to evict frames.\n", curPageNum, endPageNum);
+    logData(buffer);
+    flushLog();
+  }
+
   // for (int i = 0; i < 1792; i++) {
   //   if (PFNTable[i].threadId == 0) {
   //     sprintf(buffer, "[allocateMemory] {pfn: %d}, {threadId: %d}, {vpn: %d}.\n", i, PFNTable[i].threadId, PFNTable[i].vpn);
@@ -93,6 +112,13 @@ void allocateMemory(Thread *thread, int begin, int end) {
   //     flushLog();
   //   }
   // }
+
+  printOutAllUnusedFrameIntervals();
+  printOutAllUsedFrameThreadId();
+
+  sprintf(buffer, "[allocateMemory] Finish allocating memory from %d to %d.\n\n", begin, end);
+  logData(buffer);
+  flushLog();
 }
 
 void allocateFrameToPage(Thread* thread, int vpn) {
@@ -111,7 +137,17 @@ int allocateHeapMem(Thread *thread, int size) {
   }
 
   // find previous page's remained memory
-  int prePageRemainedMemory = PAGE_SIZE - thread->heapBottom % PAGE_SIZE;
+  int existingHeapMemory = thread->heapBottom - USER_BASE_ADDR;
+  int prePageExistingHeapMemory = existingHeapMemory % PAGE_SIZE;
+  int prePageRemainedMemory;
+  if (prePageExistingHeapMemory == 0) {
+    prePageRemainedMemory = 0;
+  } else {
+    prePageRemainedMemory = PAGE_SIZE - prePageExistingHeapMemory;
+  }
+  sprintf(buffer, "[allocateHeapMem] {line: %d} {existingHeapMemory: %d}, {prePageRemainedMemory: %d}.\n", __LINE__, existingHeapMemory, prePageRemainedMemory);
+  logData(buffer);
+  flushLog();
 
   if (prePageRemainedMemory >= size) {
     // if remaimned memory is enough, do not need another page
@@ -128,7 +164,7 @@ int allocateHeapMem(Thread *thread, int size) {
     logData(buffer);
     flushLog();
 
-    allocateMemory(thread, thread->heapBottom, thread->heapBottom + size);
+    allocateMemory(thread, thread->heapBottom, thread->heapBottom + size - 1, size);
     sprintf(buffer, "[allocateHeapMem] Allocated memory.\n");
     logData(buffer);
     flushLog();
@@ -156,9 +192,9 @@ int allocateStackMem(Thread *thread, int size) {
   }
 
   // find previous page's remained memory
-  int existingStackMemory = ALL_MEM_SIZE - thread->stackTop + 1;
-  int prePageRemainedMemory = (PAGE_SIZE - ALL_MEM_SIZE - thread->stackTop) % PAGE_SIZE;
-  sprintf(buffer, "[allocateStackMem] {thread->stackTop: %d}, {prePageRemainedMemory: %d}.\n", thread->stackTop, prePageRemainedMemory);
+  int existingStackMemory = ALL_MEM_SIZE - thread->stackTop;
+  int prePageRemainedMemory = (PAGE_SIZE - existingStackMemory) % PAGE_SIZE;
+  sprintf(buffer, "[allocateStackMem] {thread->stackTop: %d}, {prePageRemainedMemory: %d}, {existingStackMemory: %d}.\n", thread->stackTop, prePageRemainedMemory, existingStackMemory);
   logData(buffer);
   flushLog();
 
@@ -169,11 +205,14 @@ int allocateStackMem(Thread *thread, int size) {
     flushLog();
   } else {
     // else, allocate more pages
-    allocateMemory(thread, thread->stackTop - size, thread->stackTop);
+    allocateMemory(thread, thread->stackTop - size, thread->stackTop - 1, size);
   }
 
   // able to allocate size memory
   thread->stackTop -= size;
+  sprintf(buffer, "[allocateStackMem] {line: %d}, {thread->stackTop: %d}, {prePageRemainedMemory: %d}, {existingStackMemory: %d}.\n", __LINE__, thread->stackTop, prePageRemainedMemory, existingStackMemory);
+  logData(buffer);
+  flushLog();
 
   sprintf(buffer, "[allocateStackMem] End allocating memory to stack.\n");
   logData(buffer);
@@ -204,13 +243,13 @@ char* getDataArr(const void* data, int size) {
   return dataArr;
 }
 
-int bitToPrint = 5;
+
 
 void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
   char buffer[1024];
   int originalSize = size;
   int originalAddr = addr;
-  sprintf(buffer, "[writeToAddr] To write %d data from %d to %d\n", originalSize, originalAddr, originalAddr + originalSize - 1);
+  sprintf(buffer, "\n[writeToAddr] To write %d data from %d to %d\n", originalSize, originalAddr, originalAddr + originalSize - 1);
   logData(buffer);
   flushLog();
 
@@ -239,9 +278,9 @@ void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
 
     for (int i = 0; i < bitToPrint; i++) {
       if (i == bitToPrint - 1) {
-        sprintf(buffer, "%d\n", *_dataPtr++);
+        sprintf(buffer, "%x\n", *_dataPtr++);
       } else {
-        sprintf(buffer, "%d, ", *_dataPtr++);
+        sprintf(buffer, "%x, ", *_dataPtr++);
       }
       logData(buffer);
       flushLog();
@@ -253,7 +292,7 @@ void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
   logData(buffer);
   flushLog();
 
-  int x = 5;
+  int x = bitToPrint;
   sprintf(buffer, "[Line] %d\n", __LINE__);
   logData(buffer);
   flushLog();
@@ -277,41 +316,21 @@ void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
     int pfn = thread->VPNToPFN[vpn].physicalFrameNumber;
     int memoryIdx = pfn * PAGE_SIZE + offset;
 
-    if (size <= 4096) {
-      sprintf(buffer, "[writeToAddr] {vpn: %d}, {offset: %d}, {pfn: %d}, {memoryIdx: %d}, {addr: %d}, {dataPtr: 0x%x}, {size: %d}.\n", vpn, offset, pfn, memoryIdx, addr, *(dataPtr), size);
-      logData(buffer);
-      flushLog();
-    }
-
-    // sprintf(buffer, "[writeToAddr] {memoryIdx: %d}\n", memoryIdx);
+    RAW_SYSTEM_MEMORY_ACCESS[memoryIdx] = *dataPtr;
+    // sprintf(buffer, "[Line] %d\n", __LINE__);
     // logData(buffer);
     // flushLog();
-
-    // write ont bit
-    // bug 
-    sprintf(buffer, "[Line] %d\n", __LINE__);
-    logData(buffer);
-    flushLog();
-
-    sprintf(buffer, "%d\n", *dataPtr);
-    logData(buffer);
-    flushLog();
-
-    RAW_SYSTEM_MEMORY_ACCESS[memoryIdx] = *dataPtr;
-    sprintf(buffer, "[Line] %d\n", __LINE__);
-    logData(buffer);
-    flushLog();
 
     if (originalSize - size < bitToPrint) {
       partOfData[originalSize - size] = *dataPtr;
     }
-
-    if (x-- > 0) {
-      sprintf(buffer, "[writeToAddr] {memory: 0x%x}, {dataPtr: 0x%x}.\n", RAW_SYSTEM_MEMORY_ACCESS[memoryIdx], *(dataPtr));
+    // if ((originalSize - size >= startIdx) && x-- > 0) {
+    if (size <= 2048 && x-- > 0) {
+      sprintf(buffer, "[writeToAddr] {line: %d}, {memory: 0x%x}, {dataPtr: 0x%x}.\n", __LINE__, RAW_SYSTEM_MEMORY_ACCESS[memoryIdx], *(dataPtr));
       logData(buffer);
       flushLog();
 
-      sprintf(buffer, "[writeToAddr] {vpn: %d}, {offset: %d}, {pfn: %d}, {memoryIdx: %d}, {addr: %d}, {dataPtr: 0x%x}.\n", vpn, offset, pfn, memoryIdx, addr, *(dataPtr));
+      sprintf(buffer, "[writeToAddr] {line: %d} {vpn: %d}, {offset: %d}, {pfn: %d}, {memoryIdx: %d}, {addr: %d}, {dataPtr: 0x%x}.\n", __LINE__, vpn, offset, pfn, memoryIdx, addr, *(dataPtr));
       logData(buffer);
       flushLog();
     }
@@ -327,17 +346,14 @@ void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
   // memcpy(SYSTEM_MEMORY + addr - USER_BASE_ADDR, data, size);
 
   if (bitToPrint > 0) {
-    sprintf(buffer, "[writeToAddr] Show frist %d numbers of data that have been written into memory: ", bitToPrint);
-    logData(buffer);
-    flushLog();
-    sprintf(buffer, "[Line] %d\n", __LINE__);
+    sprintf(buffer, "[writeToAddr] {Line: %d} Show frist %d numbers of data that have been written into memory: ", __LINE__, bitToPrint);
     logData(buffer);
     flushLog();
     for (int i = 0; i < bitToPrint; i++) {
       if (i == bitToPrint - 1) {
-        sprintf(buffer, "%d\n", partOfData[i]);
+        sprintf(buffer, "%x\n", partOfData[i]);
       } else {
-        sprintf(buffer, "%d, ", partOfData[i]);
+        sprintf(buffer, "%x, ", partOfData[i]);
       }
       logData(buffer);
       flushLog();
@@ -353,7 +369,7 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
   char buffer[1024];
   int originalSize = size;
   int originalAddr = addr;
-  sprintf(buffer, "[readFromAddr] To write %d data from %d to %d\n", originalSize, originalAddr, originalAddr + originalSize - 1);
+  sprintf(buffer, "[readFromAddr] To read %d data from %d to %d\n", originalSize, originalAddr, originalAddr + originalSize - 1);
   logData(buffer);
   flushLog();
 
@@ -396,12 +412,13 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
 
     // write ont bit
     *outDataPtr = RAW_SYSTEM_MEMORY_ACCESS[memoryIdx];
-    if (x-- > 0) {
-      sprintf(buffer, "[readFromAddr] %d.\n", RAW_SYSTEM_MEMORY_ACCESS[memoryIdx]);
+    // if ((originalSize - size >= startIdx) && x-- > 0) {
+    if (size <= 2048 && x-- > 0) {
+      sprintf(buffer, "[readFromAddr] {memory: 0x%x}.\n", RAW_SYSTEM_MEMORY_ACCESS[memoryIdx]);
       logData(buffer);
       flushLog();
 
-      sprintf(buffer, "[readFromAddr] {vpn: %d}, {offset: %d}, {pfn: %d}, {memoryIdx: %d}, {addr: %d}.\n", vpn, offset, pfn, memoryIdx, addr);
+      sprintf(buffer, "[readFromAddr] {vpn: %d}, {offset: %d}, {pfn: %d}, {memoryIdx: %d}, {addr: %d}, {memory: 0x%x}.\n", vpn, offset, pfn, memoryIdx, addr, RAW_SYSTEM_MEMORY_ACCESS[memoryIdx]);
       logData(buffer);
       flushLog();
     }
@@ -412,11 +429,112 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
     size--;
   }
 
-  sprintf(buffer, "[readFromAddr] Wrote %d data from %d to %d\n\n", originalSize, originalAddr, originalAddr + originalSize - 1);
+  sprintf(buffer, "[readFromAddr] Read %d data from %d to %d\n\n", originalSize, originalAddr, originalAddr + originalSize - 1);
   logData(buffer);
   flushLog();
 }
 
 char* getCacheFileName(Thread* thread, int addr) {
   return NULL;
+}
+
+void printOutAllUnusedFrameIntervals() {
+  char buffer[1024];
+  sprintf(buffer, "\n[printOutAllUnusedFrameIntervals] Start to print out unused frame: ");
+  logData(buffer);
+  flushLog();
+
+  int preUnusedPFN = 256;
+  bool allFrameOccupied = true;
+
+  int i = 256;
+  int unusedFrameIntervalStart = -1;
+  int unusedFrameIntervalEnd = -1;
+  while (i < 2048) {
+    // pfn i is used
+    while (i < 2048 && PFNTable[i].isUsed) {
+      i++;
+    }
+    // pfn i is not used
+    unusedFrameIntervalStart = i;
+    while (i < 2048 && !PFNTable[i].isUsed) {
+      i++;
+      allFrameOccupied = false;
+    }
+    unusedFrameIntervalEnd = i - 1;
+    sprintf(buffer, "[%d, %d], ", unusedFrameIntervalStart, unusedFrameIntervalEnd);
+    logData(buffer);
+    flushLog();
+  }
+
+  if (!allFrameOccupied) {
+    sprintf(buffer, "\n[printOutAllUnusedFrameIntervals] Not all frames (pfn 256-2047, user space) are used.\n");
+    logData(buffer);
+    flushLog();
+  } else {
+    sprintf(buffer, "\n[printOutAllUnusedFrameIntervals] All frames (pfn 256-2047, user space) are used.\n");
+    logData(buffer);
+    flushLog();
+  }
+
+  sprintf(buffer, "[printOutAllUnusedFrameIntervals] Finish printing out unused frame:\n");
+  logData(buffer);
+  flushLog();
+}
+
+void printOutAllUsedFrameThreadId() {
+  char buffer[1024];
+  sprintf(buffer, "\n[printOutAllUsedFrameThreadId] Start to print out used frames' threadId:\n");
+  logData(buffer);
+  flushLog();
+
+  int preUnusedPFN = 256;
+  bool allFrameUnused = true;
+
+  int i = 256;
+  while (i < 2048) {
+    int preThreadId = PFNTable[i].threadId;
+    int preFrameId = i;
+    // pfn i is used
+    while (i < 2048 && PFNTable[i].isUsed && PFNTable[i].threadId == preThreadId) {
+      allFrameUnused = false;
+      i++;
+    }
+    // after the while loop, [preFrameId,i-1] is used by same thread
+    if (preFrameId <= i - 1) {
+      sprintf(buffer, "[printOutAllUsedFrameThreadId] {line: %d} frame[%d, %d] is used by {threadId: %d}.\n", __LINE__, preFrameId, i - 1, preThreadId);
+      logData(buffer);
+      flushLog();
+    }
+
+    // sprintf(buffer, "[printOutAllUsedFrameThreadId] {line: %d}, {i: %d}.\n", __LINE__, i);
+    // logData(buffer);
+    // flushLog();
+
+    // pfn i is not used
+    while (i < 2048 && !PFNTable[i].isUsed) {
+      // sprintf(buffer, "[printOutAllUsedFrameThreadId] {line: %d}, {i: %d}.\n", __LINE__, i);
+      // logData(buffer);
+      // flushLog();
+      i++;
+    }
+  }
+
+  sprintf(buffer, "\n");
+  logData(buffer);
+  flushLog();
+
+  if (allFrameUnused) {
+    sprintf(buffer, "[printOutAllUsedFrameThreadId] All frames (pfn 256-2047, user space) are unused.\n");
+    logData(buffer);
+    flushLog();
+  } else {
+    sprintf(buffer, "[printOutAllUsedFrameThreadId] Not all frames (pfn 256-2047, user space) are unused.\n");
+    logData(buffer);
+    flushLog();
+  }
+
+  sprintf(buffer, "[printOutAllUsedFrameThreadId] Finish printing out used frames' threadId:\n\n");
+  logData(buffer);
+  flushLog();
 }

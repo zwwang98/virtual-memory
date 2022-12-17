@@ -62,24 +62,72 @@ void testReadStackFullPage() {
     free(data);
     free(readData);
     destroyThread(thread);
-    sprintf(buffer, "\n[testReadStackFullPage] Test starts.\n");
+    sprintf(buffer, "\n[testReadStackFullPage] Test ends.\n");
     logData(buffer);
     flushLog();
 }
 
 void testReadStackAcrossTwoPages() {
+    char buffer[1024];
+    sprintf(buffer, "\n[testReadStackAcrossTwoPages] Test starts.\n");
+    logData(buffer);
+    flushLog();
+
     Thread* thread = createThread();
+
     void* data = createRandomData(PAGE_SIZE*2);
+
+    int printNum = 5;
+    sprintf(buffer, "\n[testReadStackAcrossTwoPages] Print out first %d of data: ", printNum);
+    logData(buffer);
+    flushLog();
+    int y = 0;
+    char *dataPtr = data + y;
+    for (int i = 0; i < printNum; i++) {
+        sprintf(buffer, "0x%x, ", *(dataPtr++));
+        logData(buffer);
+        flushLog();
+        if (i == printNum - 1) {
+            sprintf(buffer, "\n\n");
+            logData(buffer);
+            flushLog();
+        }
+    }
+
     int addr = allocateAndWriteStackData(thread, data, PAGE_SIZE * 2, PAGE_SIZE * 2);
 
     void *readData = malloc(PAGE_SIZE*2);
     bzero(readData, PAGE_SIZE*2);
     readFromAddr(thread, addr, PAGE_SIZE*2, readData);
 
+    sprintf(buffer, "\n[testReadStackAcrossTwoPages] Print out first %d of readData: ", printNum);
+    logData(buffer);
+    flushLog();
+    char *readDataPtr = readData;
+    for (int i = 0; i < printNum; i++) {
+        sprintf(buffer, "0x%x, ", *(dataPtr++));
+        logData(buffer);
+        flushLog();
+        if (i == printNum - 1) {
+            sprintf(buffer, "\n\n");
+            logData(buffer);
+            flushLog();
+        }
+    }
+
     TEST_ASSERT_EQUAL_MEMORY(data, readData, PAGE_SIZE*2);
+
+    sprintf(buffer, "\n[testReadStackAcrossTwoPages] {Line: %d}.\n", __LINE__);
+    logData(buffer);
+    flushLog();
+
     free(data);
     free(readData);
     destroyThread(thread);
+
+    sprintf(buffer, "\n[testReadStackAcrossTwoPages] Test ends.\n");
+    logData(buffer);
+    flushLog();
 }
 
 void testReadStackMiddleOfPage() {
@@ -129,6 +177,11 @@ void testReadStackPartialPage() {
 }
 
 void testReadAllStackMem() {
+    char buffer[1024];
+    sprintf(buffer, "\n[testReadAllStackMem] Test starts.\n");
+    logData(buffer);
+    flushLog();
+
     Thread *thread = createThread();
     int size = ALL_MEM_SIZE-STACK_END_ADDR;
     void *data = createRandomData(size);
@@ -141,4 +194,8 @@ void testReadAllStackMem() {
     free(data);
     free(readData);
     destroyThread(thread);
+
+    sprintf(buffer, "\n[testReadAllStackMem] Test ends.\n\n");
+    logData(buffer);
+    flushLog();
 }

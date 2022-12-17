@@ -39,7 +39,49 @@ int startLogPageNum = 0;
 
 void printOutAllUnusedFrameIntervals();
 void printOutAllUsedFrameThreadId();
-void evictPage();
+
+/**
+ * @brief Evict given thread's given page from given memory pointer into disc.
+ * 
+ * @param thread Given thread.
+ * @param vpn The virtual page number of the page to be evicted.
+ * @param memory Given memory pointer.
+ */
+void evictPage(Thread *thread, int vpn, void *memory);
+
+/**
+ * @brief Load given thread's given page from disc into memory.
+ * 
+ * @param thread Given thread.
+ * @param vpn The virtual page number of the page to be evicted.
+ * @param memory Given memory pointer.
+ */
+void loadPage(Thread *thread, int vpn, void *memory);
+
+/**
+ * @brief Given thread and vpn, return the expected file name of the file storing the data in this page.
+ * 
+ * @param thread Given thread.
+ * @param vpn Given virtual page number.
+ * @return char* The expected file name of the file storing the data in this page.
+ */
+char* outPageName(Thread *thread, int vpn) {
+  char fileName[1024];
+  snprintf(fileName, sizeof(fileName), "page_{thread:%d}_{vpn:%d}", thread->threadId, vpn);
+  return fileName;
+}
+
+/**
+ * @brief Check the existence of page in disc given thread and vpn.
+ * 
+ * @param thread Given thread.
+ * @param vpn Given virtual page number of given thread.
+ * @return true If the data of that page has been swapped into disc before.
+ * @return false If the data of that page has never been swapped into disc before.
+ */
+bool isPageInDisc(Thread *thread, int vpn) {
+
+}
 
 // assign frames to thread to
 void allocateMemory(Thread *thread, int begin, int end, int size) {

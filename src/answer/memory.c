@@ -63,9 +63,10 @@ int choosePageToEvict(Thread *thread) {
       break;
     }
     clockPtr++;
-    if (clockPtr == 2048) {
-      clockPtr = 256;
-    }
+  }
+
+  if (clockPtr == 2048) {
+    clockPtr = 256;
   }
 
   return clockPtr;
@@ -163,8 +164,8 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   logData(buffer);
   flushLog();
 
-  printOutAllUnusedFrameIntervals(thread);
-  printOutAllUsedFrameThreadId(thread);
+  // printOutAllUnusedFrameIntervals(thread);
+  // printOutAllUsedFrameThreadId(thread);
 
   int beginPageNum = begin / PAGE_SIZE;
   int endPageNum = end / PAGE_SIZE;
@@ -221,13 +222,40 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   }
 
   while (curPageNum <= endPageNum) {
+    sprintf(buffer, "[allocateMemory] {line: %d} {curPageNum: %d}.\n", __LINE__, curPageNum);
+    logData(buffer);
+    flushLog();
+
     int vpnToEvict = choosePageToEvict(thread);
     int evictStartMemoryIdx = (vpnToEvict - 1) * PAGE_SIZE;
+
+    sprintf(buffer, "[allocateMemory] {line: %d} {curPageNum: %d}.\n", __LINE__, curPageNum);
+    logData(buffer);
+    flushLog();
+
     evictPage(thread, vpnToEvict, RAW_SYSTEM_MEMORY_ACCESS[evictStartMemoryIdx]);
+    int pfnReleased = thread->VPNToPFN[vpnToEvict].physicalFrameNumber;
+
+    sprintf(buffer, "[allocateMemory] {line: %d} {curPageNum: %d}.\n", __LINE__, curPageNum);
+    logData(buffer);
+    flushLog();
+    
+    // update frame table
+    PFNTable[pfnReleased].threadId = thread->threadId;
+    PFNTable[pfnReleased].vpn = curPageNum;
+    PFNTable[pfnReleased].isUsed = true;
+    // update thread's page table
+    thread->VPNToPFN[curPageNum].physicalFrameNumber = pfnReleased;
+    thread->VPNToPFN[curPageNum].present = pfnReleased;
+
+    curPageNum++;
+    sprintf(buffer, "[allocateMemory] {line: %d} {curPageNum: %d}.\n", __LINE__, curPageNum);
+    logData(buffer);
+    flushLog();
   }
 
-  printOutAllUnusedFrameIntervals(thread);
-  printOutAllUsedFrameThreadId(thread);
+  // printOutAllUnusedFrameIntervals(thread);
+  // printOutAllUsedFrameThreadId(thread);
 
   pthread_mutex_unlock(&lock);
   sprintf(buffer, "[allocateMemory] {line: %d} {thread: %d} returns the lock.\n", __LINE__, thread->threadId);

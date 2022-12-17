@@ -40,6 +40,11 @@ void testDataPagedOutCorrectly() {
 }
 
 void testDataPagedInCorrectly() {
+    char buffer[1024];
+    sprintf(buffer, "\n\n[testDataPagedInCorrectly] Tests start.\n");
+    logData(buffer);
+    flushLog();
+
     Thread* thread1 = createThread();
     void *data = createRandomData(PAGE_SIZE);
     int addr = allocateAndWriteHeapData(thread1, data, PAGE_SIZE, PAGE_SIZE);
@@ -68,4 +73,8 @@ void testDataPagedInCorrectly() {
     free(data);
     free(data2);
     free(readData);
+
+    sprintf(buffer, "[testDataPagedInCorrectly] Tests ends.\n");
+    logData(buffer);
+    flushLog();
 }

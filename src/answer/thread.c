@@ -32,12 +32,18 @@ Thread* createThread() {
 }
 
 void destroyThread(Thread* thread) {
-  // pthread_mutex_lock(&lock);
+
   // This is line is ABSOLUTELY REQUIRED for the tests to run properly. This allows the thread to finish its work
   // DO NOT REMOVE.
   if (thread->thread) pthread_join(thread->thread, NULL);
 
   char buffer[1024];
+
+  pthread_mutex_lock(&lock);
+  sprintf(buffer, "[destroyThread] Lock the frame table.\n");
+  logData(buffer);
+  flushLog();
+
   sprintf(buffer, "[destroyThread] Gonna to destroy {thread: %d}.\n", thread->threadId);
   logData(buffer);
   flushLog();
@@ -54,10 +60,14 @@ void destroyThread(Thread* thread) {
     PFNTable[pfn].isUsed = false;
   }
 
-  free(thread);
-  // pthread_mutex_unlock(&lock);
-
   sprintf(buffer, "[destroyThread] Finish destroying {thread: %d}.\n", thread->threadId);
   logData(buffer);
   flushLog();
+
+  free(thread);
+  pthread_mutex_unlock(&lock);
+  sprintf(buffer, "[destroyThread] Release the lock over the frame table.\n");
+  logData(buffer);
+  flushLog();
+
 }

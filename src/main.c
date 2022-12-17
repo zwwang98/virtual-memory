@@ -23,7 +23,7 @@
 #define RUN_MULTI_THREADED_STACK_TESTS
 
 // Phase 3 4 5
-#define RUN_PAGING_TESTS
+// #define RUN_PAGING_TESTS
 
 // Phase ....
 //#define EXTRA_LONG_RUNNING_TESTS

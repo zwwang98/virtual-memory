@@ -33,6 +33,9 @@ FrameEntry PFNTable[NUM_PAGES];
 // unlok - pthread_mutex_unlock(&lock);
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
+// clock algorithm pointer
+int clockPtr = 256;
+
 // some variables help for debug
 int bitToPrint = 5;
 int startIdx = 2088960;
@@ -49,22 +52,24 @@ void printOutAllUnusedFrameIntervals(Thread *thread);
 void printOutAllUsedFrameThreadId(Thread *thread);
 
 /**
- * @brief Evict given thread's given page from given memory pointer into disc.
+ * @brief Choose frame to evict using clock algorithm.
  * 
  * @param thread Given thread.
- * @param vpn The virtual page number of the page to be evicted.
- * @param memory Given memory pointer.
+ * @return int The vpn of the page of given thread to be evicted.
  */
-void evictPage(Thread *thread, int vpn, void *memory);
+int choosePageToEvict(Thread *thread) {
+  while (clockPtr < 2048) {
+    if (thread->VPNToPFN[clockPtr].present && !thread->VPNToPFN[clockPtr].accessed) {
+      break;
+    }
+    clockPtr++;
+    if (clockPtr == 2048) {
+      clockPtr = 256;
+    }
+  }
 
-/**
- * @brief Load given thread's given page from disc into memory.
- * 
- * @param thread Given thread.
- * @param vpn The virtual page number of the page to be evicted.
- * @param memory Given memory pointer.
- */
-void loadPage(Thread *thread, int vpn, void *memory);
+  return clockPtr;
+}
 
 /**
  * @brief Given thread and vpn, return the expected file name of the file storing the data in this page.
@@ -75,9 +80,64 @@ void loadPage(Thread *thread, int vpn, void *memory);
  */
 char* outPageName(Thread *thread, int vpn) {
   char fileName[1024];
-  snprintf(fileName, sizeof(fileName), "page_{thread:%d}_{vpn:%d}", thread->threadId, vpn);
+  snprintf(fileName, sizeof(fileName), ".page_thread_%d_vpn_%d", thread->threadId, vpn);
   return fileName;
 }
+
+/**
+ * @brief Evict given thread's given page from given memory pointer into disc.
+ * 
+ * @param thread Given thread.
+ * @param vpn The virtual page number of the page to be evicted.
+ * @param memory Given memory pointer.
+ */
+void evictPage(Thread *thread, int vpn, void *memory) {
+  char* cacheFileName = outPageName(thread, vpn);
+
+  thread->VPNToPFN[vpn].present = false;
+
+  FILE *file = fopen(cacheFileName, "w");
+  // https://www.tutorialspoint.com/c_standard_library/c_function_fwrite.htm
+  // write data in {memory} into {file}
+  fwrite(memory, PAGE_SIZE, 1, file);
+  fclose(file);
+}
+
+/**
+ * @brief Load given thread's given page from disc into memory.
+ * 
+ * @param thread Given thread.
+ * @param vpn The virtual page number of the page to be loaded.
+ * @param memory Given memory pointer.
+ */
+void loadPage(Thread *thread, int vpn, void *memory) {
+  char buffer[1024];
+  sprintf(buffer, "\n\n[loadPage] Loading page...\n");
+  logData(buffer);
+  flushLog();
+
+  thread->VPNToPFN[vpn].present = true;
+
+  char* cacheFileName = outPageName(thread, vpn);
+  sprintf(buffer, "[loadPage] {cacheFileName: %s}\n", cacheFileName);
+  logData(buffer);
+  flushLog();
+
+  // https://pubs.opengroup.org/onlinepubs/007904975/functions/fopen.html
+  // open the given file whose name is {filename} in read mode
+  FILE *file = fopen(cacheFileName, "r");
+  if (file) {
+      // https://www.tutorialspoint.com/c_standard_library/c_function_fread.htm
+      // read data in {file} into {buf}
+      fread(memory, PAGE_SIZE, 1, file);
+      fclose(file);
+  }
+
+  sprintf(buffer, "[loadPage] Page loaded...\n\n");
+  logData(buffer);
+  flushLog();
+}
+
 
 /**
  * @brief Check the existence of page in disc given thread and vpn.
@@ -137,7 +197,6 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
       // update thread's page table
       thread->VPNToPFN[curPageNum].physicalFrameNumber = i;
       thread->VPNToPFN[curPageNum].present = 1;
-      thread->VPNToPFN[curPageNum].accessed = 1;
 
       // // log
       if (curPageNum >= startLogPageNum && x-- > 0) {
@@ -161,13 +220,11 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
     flushLog();
   }
 
-  // for (int i = 0; i < 1792; i++) {
-  //   if (PFNTable[i].threadId == 0) {
-  //     sprintf(buffer, "[allocateMemory] {pfn: %d}, {threadId: %d}, {vpn: %d}.\n", i, PFNTable[i].threadId, PFNTable[i].vpn);
-  //     logData(buffer);
-  //     flushLog();
-  //   }
-  // }
+  while (curPageNum <= endPageNum) {
+    int vpnToEvict = choosePageToEvict(thread);
+    int evictStartMemoryIdx = (vpnToEvict - 1) * PAGE_SIZE;
+    evictPage(thread, vpnToEvict, RAW_SYSTEM_MEMORY_ACCESS[evictStartMemoryIdx]);
+  }
 
   printOutAllUnusedFrameIntervals(thread);
   printOutAllUsedFrameThreadId(thread);
@@ -307,7 +364,7 @@ char* getDataArr(const void* data, int size) {
 
 
 
-void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
+void writeToAddr(Thread* thread, int addr, int size, const void* data) {
   char buffer[1024];
   
   int originalSize = size;
@@ -388,6 +445,8 @@ void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
       logData(buffer);
       flushLog();
     }
+
+    thread->VPNToPFN[vpn].accessed = 1;
 
     RAW_SYSTEM_MEMORY_ACCESS[memoryIdx] = *dataPtr;
     // sprintf(buffer, "[Line] %d\n", __LINE__);
@@ -497,6 +556,12 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
     int offset = addr % PAGE_SIZE;
     int pfn = thread->VPNToPFN[vpn].physicalFrameNumber;
     int memoryIdx = pfn * PAGE_SIZE + offset;
+
+    if (thread->VPNToPFN[vpn].present = false ) {
+      loadPage(thread, vpn, RAW_SYSTEM_MEMORY_ACCESS[(vpn - 1) * PAGE_SIZE]);
+    }
+
+    thread->VPNToPFN[vpn].accessed = true;
 
     // 5242879
     // sprintf(buffer, "[readFromAddr] {vpn: %d}, {offset: %d}, {pfn: %d}, {memoryIdx: %d}.\n", vpn, offset, pfn, memoryIdx);

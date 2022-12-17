@@ -37,7 +37,7 @@ pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 int clockPtr = 256;
 
 // some variables help for debug
-int bitToPrint = 5;
+int bitToPrint = 0;
 int startIdx = 2088960;
 int startLogPageNum = 0;
 
@@ -58,6 +58,11 @@ void printOutAllUsedFrameThreadId(Thread *thread);
  * @return int The vpn of the page of given thread to be evicted.
  */
 int choosePageToEvict(Thread *thread) {
+  char buffer[1024];
+  sprintf(buffer, "\n\n[choosePageToEvict] Starts\n");
+  logData(buffer);
+  flushLog();
+
   while (clockPtr < 2048) {
     if (thread->VPNToPFN[clockPtr].present && !thread->VPNToPFN[clockPtr].accessed) {
       break;
@@ -68,6 +73,10 @@ int choosePageToEvict(Thread *thread) {
   if (clockPtr == 2048) {
     clockPtr = 256;
   }
+
+  sprintf(buffer, "[choosePageToEvict] Ends. Choose {vpn: %d} to evict.\n\n", clockPtr);
+  logData(buffer);
+  flushLog();
 
   return clockPtr;
 }
@@ -93,8 +102,18 @@ char* outPageName(int threadId, int vpn) {
  * @param memory Given memory pointer.
  */
 void evictPage(Thread *thread, int vpn, void *memory) {
+  char buffer[1024];
+  sprintf(buffer, "\n\n[evictPage] Starts\n");
+  logData(buffer);
+  flushLog();
+
   int threadId = PFNTable[vpn].threadId;
-  char* cacheFileName = outPageName(threadId, vpn);
+  char cacheFileName[1024];
+  snprintf(cacheFileName, sizeof(cacheFileName), ".page_thread_%d_vpn_%d", threadId, vpn);
+
+  sprintf(buffer, "[evictPage] {filename: %s}\n", cacheFileName);
+  logData(buffer);
+  flushLog();
 
   thread->VPNToPFN[vpn].present = false;
 
@@ -103,6 +122,10 @@ void evictPage(Thread *thread, int vpn, void *memory) {
   // write data in {memory} into {file}
   fwrite(memory, PAGE_SIZE, 1, file);
   fclose(file);
+
+  sprintf(buffer, "[evictPage] Ends\n\n");
+  logData(buffer);
+  flushLog();
 }
 
 /**
@@ -112,33 +135,34 @@ void evictPage(Thread *thread, int vpn, void *memory) {
  * @param vpn The virtual page number of the page to be loaded.
  * @param memory Given memory pointer.
  */
-void loadPage(Thread *thread, int vpn, void *memory) {
-  char buffer[1024];
-  sprintf(buffer, "\n\n[loadPage] Loading page...\n");
-  logData(buffer);
-  flushLog();
+// void loadPage(Thread *thread, int vpn, void *memory) {
+//   char buffer[1024];
+//   sprintf(buffer, "\n\n[loadPage] Loading page...\n");
+//   logData(buffer);
+//   flushLog();
 
-  thread->VPNToPFN[vpn].present = true;
+//   thread->VPNToPFN[vpn].present = true;
 
-  char* cacheFileName = outPageName(thread->threadId, vpn);
-  sprintf(buffer, "[loadPage] {cacheFileName: %s}\n", cacheFileName);
-  logData(buffer);
-  flushLog();
+//   char cacheFileName[1024];
+//   snprintf(cacheFileName, sizeof(cacheFileName), ".page_thread_%d_vpn_%d", threadId, vpn);
+//   sprintf(buffer, "[loadPage] {cacheFileName: %s}\n", cacheFileName);
+//   logData(buffer);
+//   flushLog();
 
-  // https://pubs.opengroup.org/onlinepubs/007904975/functions/fopen.html
-  // open the given file whose name is {filename} in read mode
-  FILE *file = fopen(cacheFileName, "r");
-  if (file) {
-      // https://www.tutorialspoint.com/c_standard_library/c_function_fread.htm
-      // read data in {file} into {buf}
-      fread(memory, PAGE_SIZE, 1, file);
-      fclose(file);
-  }
+//   // https://pubs.opengroup.org/onlinepubs/007904975/functions/fopen.html
+//   // open the given file whose name is {filename} in read mode
+//   FILE *file = fopen(cacheFileName, "r");
+//   if (file) {
+//       // https://www.tutorialspoint.com/c_standard_library/c_function_fread.htm
+//       // read data in {file} into {buf}
+//       fread(memory, PAGE_SIZE, 1, file);
+//       fclose(file);
+//   }
 
-  sprintf(buffer, "[loadPage] Page loaded...\n\n");
-  logData(buffer);
-  flushLog();
-}
+//   sprintf(buffer, "[loadPage] Page loaded...\n\n");
+//   logData(buffer);
+//   flushLog();
+// }
 
 
 /**
@@ -161,9 +185,9 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   flushLog();
 
   pthread_mutex_lock(&lock);
-  sprintf(buffer, "[allocateMemory] {line: %d} {thread: %d} gets the lock.\n", __LINE__, thread->threadId);
-  logData(buffer);
-  flushLog();
+  // sprintf(buffer, "[allocateMemory] {line: %d} {thread: %d} gets the lock.\n", __LINE__, thread->threadId);
+  // logData(buffer);
+  // flushLog();
 
   // printOutAllUnusedFrameIntervals(thread);
   // printOutAllUsedFrameThreadId(thread);
@@ -172,9 +196,9 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   int endPageNum = end / PAGE_SIZE;
   int curPageNum = beginPageNum;
 
-  sprintf(buffer, "[allocateMemory] {begin: %d}, {beginPageNum: %d}, {end: %d}, {endPageNum: %d}, {curPageNum: %d}.\n", begin, beginPageNum, end, endPageNum, curPageNum);
-  logData(buffer);
-  flushLog();
+  // sprintf(buffer, "[allocateMemory] {begin: %d}, {beginPageNum: %d}, {end: %d}, {endPageNum: %d}, {curPageNum: %d}.\n", begin, beginPageNum, end, endPageNum, curPageNum);
+  // logData(buffer);
+  // flushLog();
 
 
   int x = bitToPrint;
@@ -183,9 +207,9 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   // frame 0-255 == 1MB, saved for kernel space
   for (int i = 256; i < 2048; i++) {
     while (curPageNum <= endPageNum && thread->VPNToPFN[curPageNum].physicalFrameNumber != -1) {
-      sprintf(buffer, "[allocateMemory] Skip assigning frame to thread %d page {vpn: %d}, because it already has a frame  %d.\n", thread->threadId, curPageNum, thread->VPNToPFN[curPageNum]);
-      logData(buffer);
-      flushLog();
+      // sprintf(buffer, "[allocateMemory] Skip assigning frame to thread %d page {vpn: %d}, because it already has a frame  %d.\n", thread->threadId, curPageNum, thread->VPNToPFN[curPageNum]);
+      // logData(buffer);
+      // flushLog();
       curPageNum++;
     }
     if (curPageNum > endPageNum) {
@@ -201,11 +225,11 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
       thread->VPNToPFN[curPageNum].present = 1;
 
       // // log
-      if (curPageNum >= startLogPageNum && x-- > 0) {
-        sprintf(buffer, "[allocateMemory] {line: %d} Assign frame {pfn: %d} to thread %d page {vpn: %d}.\n", __LINE__, i, thread->threadId, curPageNum);
-        logData(buffer);
-        flushLog();
-      }
+      // if (curPageNum >= startLogPageNum && x-- > 0) {
+      //   sprintf(buffer, "[allocateMemory] {line: %d} Assign frame {pfn: %d} to thread %d page {vpn: %d}.\n", __LINE__, i, thread->threadId, curPageNum);
+      //   logData(buffer);
+      //   flushLog();
+      // }
 
       curPageNum++;
     }
@@ -216,11 +240,11 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   logData(buffer);
   flushLog();
 
-  if (curPageNum <= endPageNum) {
-    sprintf(buffer, "[allocateMemory] Pages [%d, %d] are not allocated frames because there is no unused frame. We may need to evict frames.\n", curPageNum, endPageNum);
-    logData(buffer);
-    flushLog();
-  }
+  // if (curPageNum <= endPageNum) {
+  //   sprintf(buffer, "[allocateMemory] Pages [%d, %d] are not allocated frames because there is no unused frame. We may need to evict frames.\n", curPageNum, endPageNum);
+  //   logData(buffer);
+  //   flushLog();
+  // }
 
   while (curPageNum <= endPageNum) {
     sprintf(buffer, "[allocateMemory] {line: %d} {curPageNum: %d}.\n", __LINE__, curPageNum);
@@ -266,7 +290,6 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   sprintf(buffer, "[allocateMemory] Finish allocating {size: %d} memory from %d to %d.\n\n", size, begin, end);
   logData(buffer);
   flushLog();
-
 }
 
 void allocateFrameToPage(Thread* thread, int vpn) {
@@ -587,7 +610,7 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
     int memoryIdx = pfn * PAGE_SIZE + offset;
 
     if (thread->VPNToPFN[vpn].present = false ) {
-      loadPage(thread, vpn, RAW_SYSTEM_MEMORY_ACCESS[(vpn - 1) * PAGE_SIZE]);
+      // loadPage(thread, vpn, RAW_SYSTEM_MEMORY_ACCESS[(vpn - 1) * PAGE_SIZE]);
     }
 
     thread->VPNToPFN[vpn].accessed = true;
@@ -635,8 +658,20 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
 }
 
 char* getCacheFileName(Thread* thread, int addr) {
+  char buffer[1024];
+  sprintf(buffer, "\n\n[getCacheFileName] Start \n");
+  logData(buffer);
+  flushLog();
+
+  char cacheFileName[1024];
   int vpn = addr / PAGE_SIZE;
-  return outPageName(thread, vpn);
+  snprintf(cacheFileName, sizeof(cacheFileName), ".page_thread_%d_vpn_%d", thread->threadId, vpn);
+
+  sprintf(buffer, "[getCacheFileName] End\n");
+  logData(buffer);
+  flushLog();
+
+  return cacheFileName;
 }
 
 void printOutAllUnusedFrameIntervals(Thread* thread) {

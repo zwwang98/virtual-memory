@@ -22,12 +22,19 @@ void testDataPagedOutCorrectly() {
         addr = allocateAndWriteHeapData(thread1, data, PAGE_SIZE, PAGE_SIZE);
     }
 
+    sprintf(buffer, "\n\n[testDataPagedOutCorrectly] {line: %d}.\n", __LINE__);
+    logData(buffer);
+    flushLog();
+
     addr = allocateAndWriteStackData(thread1, data, PAGE_SIZE, PAGE_SIZE);
 
     while (addr !=-1) {
         addr = allocateAndWriteStackData(thread1, data, PAGE_SIZE, PAGE_SIZE);
     }
 
+    sprintf(buffer, "\n\n[testDataPagedOutCorrectly] {line: %d}.\n", __LINE__);
+    logData(buffer);
+    flushLog();
 
     Thread* thread2 = createThread();
     void* data2 = createRandomData(PAGE_SIZE);
@@ -40,7 +47,7 @@ void testDataPagedOutCorrectly() {
     sprintf(buffer, "\n\n[testDataPagedOutCorrectly] {line: %d}, {fileName: %s}, {thread1 id: %d}.\n", __LINE__, fileName, thread1->threadId);
     logData(buffer);
     flushLog();
-    
+
     fread(fileData, 1,  PAGE_SIZE, file);
 
     sprintf(buffer, "\n\n[testDataPagedOutCorrectly] {line: %d}.\n", __LINE__);

@@ -18,9 +18,9 @@
 #define RUN_SINGLE_THREADED_HEAP_TESTS
 #define RUN_SINGLE_THREADED_STACK_TESTS
 
-// // Phase 2 
-// #define RUN_MULTI_THREADED_HEAP_TESTS
-// #define RUN_MULTI_THREADED_STACK_TESTS
+// Phase 2 
+#define RUN_MULTI_THREADED_HEAP_TESTS
+#define RUN_MULTI_THREADED_STACK_TESTS
 
 // Phase 3 4 5
 // #define RUN_PAGING_TESTS
@@ -72,7 +72,7 @@ int main(void) {
     RUN_TEST(testSingleThreadedWriteStackAndReadMiddleOfPage);
     RUN_TEST(testSingleThreadedWriteStackAndReadPartial);
     RUN_TEST(testSingleThreadedWriteStackBeyondEndOfPage);  // bug
-    // RUN_TEST(testSingleThreadedWriteStackAndReadAllStack);
+    RUN_TEST(testSingleThreadedWriteStackAndReadAllStack);
     #endif
     #ifdef RUN_MULTI_THREADED_HEAP_TESTS
     RUN_TEST(testMultiThreadedWriteHeapAndReadFullPage);

@@ -46,9 +46,9 @@ void destroyThread(Thread* thread) {
     if (pfn == -1) {
       continue;
     }
-    sprintf(buffer, "[destroyThread] {pfn: %d}.\n", pfn);
-    logData(buffer);
-    flushLog();
+    // sprintf(buffer, "[destroyThread] {pfn: %d}.\n", pfn);
+    // logData(buffer);
+    // flushLog();
     PFNTable[pfn].isUsed = false;
   }
 

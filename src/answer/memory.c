@@ -37,8 +37,15 @@ int bitToPrint = 5;
 int startIdx = 2088960;
 int startLogPageNum = 0;
 
-void printOutAllUnusedFrameIntervals();
-void printOutAllUsedFrameThreadId();
+/**
+ * @brief Debug-helper function. Print out all unused frame intervals.
+ */
+void printOutAllUnusedFrameIntervals(Thread *thread);
+
+/**
+ * @brief Debug-helper function. Print out all used frame associated with the thread id.
+ */
+void printOutAllUsedFrameThreadId(Thread *thread);
 
 /**
  * @brief Evict given thread's given page from given memory pointer into disc.
@@ -90,8 +97,8 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   logData(buffer);
   flushLog();
 
-  printOutAllUnusedFrameIntervals();
-  printOutAllUsedFrameThreadId();
+  printOutAllUnusedFrameIntervals(thread);
+  printOutAllUsedFrameThreadId(thread);
 
   int beginPageNum = begin / PAGE_SIZE;
   int endPageNum = end / PAGE_SIZE;
@@ -156,8 +163,8 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   //   }
   // }
 
-  printOutAllUnusedFrameIntervals();
-  printOutAllUsedFrameThreadId();
+  printOutAllUnusedFrameIntervals(thread);
+  printOutAllUsedFrameThreadId(thread);
 
   sprintf(buffer, "[allocateMemory] Finish allocating memory from %d to %d.\n\n", begin, end);
   logData(buffer);
@@ -481,9 +488,9 @@ char* getCacheFileName(Thread* thread, int addr) {
   return NULL;
 }
 
-void printOutAllUnusedFrameIntervals() {
+void printOutAllUnusedFrameIntervals(Thread* thread) {
   char buffer[1024];
-  sprintf(buffer, "\n[printOutAllUnusedFrameIntervals] Start to print out unused frame: ");
+  sprintf(buffer, "\n[printOutAllUnusedFrameIntervals] {line: %d} {thread: %d} Start to print out unused frame: ", __LINE__, thread->threadId);
   logData(buffer);
   flushLog();
 
@@ -505,9 +512,11 @@ void printOutAllUnusedFrameIntervals() {
       allFrameOccupied = false;
     }
     unusedFrameIntervalEnd = i - 1;
-    sprintf(buffer, "[%d, %d], ", unusedFrameIntervalStart, unusedFrameIntervalEnd);
-    logData(buffer);
-    flushLog();
+    if (!allFrameOccupied) {
+      sprintf(buffer, "[%d, %d], ", unusedFrameIntervalStart, unusedFrameIntervalEnd);
+      logData(buffer);
+      flushLog();
+    }
   }
 
   if (!allFrameOccupied) {
@@ -525,9 +534,9 @@ void printOutAllUnusedFrameIntervals() {
   flushLog();
 }
 
-void printOutAllUsedFrameThreadId() {
+void printOutAllUsedFrameThreadId(Thread* thread) {
   char buffer[1024];
-  sprintf(buffer, "\n[printOutAllUsedFrameThreadId] Start to print out used frames' threadId:\n");
+  sprintf(buffer, "\n[printOutAllUsedFrameThreadId] {line: %d} {thread: %d} Start to print out used frame: ", __LINE__, thread->threadId);
   logData(buffer);
   flushLog();
 

@@ -14,13 +14,13 @@
 #define RUN_NON_THREADED_HEAP_TESTS
 #define RUN_NON_THREADED_STACK_TESTS
 
-// // Phase 1.1
+// Phase 1.1
 #define RUN_SINGLE_THREADED_HEAP_TESTS
 #define RUN_SINGLE_THREADED_STACK_TESTS
 
-// // // Phase 2 
-#define RUN_MULTI_THREADED_HEAP_TESTS
-#define RUN_MULTI_THREADED_STACK_TESTS
+// // Phase 2 
+// #define RUN_MULTI_THREADED_HEAP_TESTS
+// #define RUN_MULTI_THREADED_STACK_TESTS
 
 // Phase 3 4 5
 // #define RUN_PAGING_TESTS
@@ -62,7 +62,7 @@ int main(void) {
     RUN_TEST(testSingleThreadedWriteHeapAndReadAcrossTwoPages);
     RUN_TEST(testSingleThreadedWriteHeapAndReadMiddleOfPage);
     RUN_TEST(testSingleThreadedWriteHeapAndReadPartial);
-    RUN_TEST(testSingleThreadedWriteHeapBeyondEndOfPage);
+    RUN_TEST(testSingleThreadedWriteHeapBeyondEndOfPage);  // due to kernel panic, some frame is not released
     RUN_TEST(testSingleThreadedReadAllHeapMem);
 
     #endif
@@ -71,8 +71,8 @@ int main(void) {
     RUN_TEST(testSingleThreadedWriteStackAndReadAcrossTwoPages);
     RUN_TEST(testSingleThreadedWriteStackAndReadMiddleOfPage);
     RUN_TEST(testSingleThreadedWriteStackAndReadPartial);
-    RUN_TEST(testSingleThreadedWriteStackBeyondEndOfPage);
-    RUN_TEST(testSingleThreadedWriteStackAndReadAllStack);
+    RUN_TEST(testSingleThreadedWriteStackBeyondEndOfPage);  // bug
+    // RUN_TEST(testSingleThreadedWriteStackAndReadAllStack);
     #endif
     #ifdef RUN_MULTI_THREADED_HEAP_TESTS
     RUN_TEST(testMultiThreadedWriteHeapAndReadFullPage);

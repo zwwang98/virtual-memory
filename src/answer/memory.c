@@ -373,23 +373,21 @@ void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
   while (size > 0) {
     // not in stack or heap
     if (addr > thread->heapBottom && addr < thread->stackTop) {
-      sprintf(buffer, "[Line] %d, kernel panic\n", __LINE__);
+      sprintf(buffer, "[writeToAddr] {line: %d} Addr is beyond valid range. KernelPanic will be invoked..\n", __LINE__);
       logData(buffer);
       flushLog();
-
-      // return lock before kernel panic to avoid dead lock
-      pthread_mutex_unlock(&lock);
-      sprintf(buffer, "[writeToAddr] {line: %d} {thread: %d} returns the lock.\n", __LINE__, thread->threadId);
-      logData(buffer);
-      flushLog();
-
-      kernelPanic(thread, addr);
+      break;
     }
 
     int vpn = addr / PAGE_SIZE;
     int offset = addr % PAGE_SIZE;
     int pfn = thread->VPNToPFN[vpn].physicalFrameNumber;
     int memoryIdx = pfn * PAGE_SIZE + offset;
+    if (size <= 2048 && x-- > 0) {
+      sprintf(buffer, "[writeToAddr] {line: %d} {vpn: %d}, {offset: %d}, {pfn: %d}, {memoryIdx: %d}, {addr: %d}, {dataPtr: 0x%x}.\n", __LINE__, vpn, offset, pfn, memoryIdx, addr, *(dataPtr));
+      logData(buffer);
+      flushLog();
+    }
 
     RAW_SYSTEM_MEMORY_ACCESS[memoryIdx] = *dataPtr;
     // sprintf(buffer, "[Line] %d\n", __LINE__);
@@ -440,6 +438,13 @@ void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
   logData(buffer);
   flushLog();
 
+  if (size > 0) {
+    sprintf(buffer, "[writeToAddr] Have data out of range. Call kernelPanic().\n");
+    logData(buffer);
+    flushLog();
+    kernelPanic(thread, addr);
+  }
+
   sprintf(buffer, "[writeToAddr] Wrote %d data from %d to %d\n\n", originalSize, originalAddr, originalAddr + originalSize - 1);
   logData(buffer);
   flushLog();
@@ -480,15 +485,12 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
   int x = bitToPrint;
 
   while (size > 0) {
-    // not in stack or heap
+    // not in stack or heap, stop reading
     if (addr > thread->heapBottom && addr < thread->stackTop) {
-      // return lock before kernel panic to avoid dead lock
-      pthread_mutex_unlock(&lock);
-      sprintf(buffer, "[writeToAddr] {line: %d} {thread: %d} returns the lock.\n", __LINE__, thread->threadId);
+      sprintf(buffer, "[readFromAddr] {line: %d} Addr is beyond valid range. KernelPanic will be invoked..\n", __LINE__);
       logData(buffer);
       flushLog();
-
-      kernelPanic(thread, addr);
+      break;
     }
 
     int vpn = addr / PAGE_SIZE;
@@ -524,6 +526,14 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
   sprintf(buffer, "[readFromAddr] {line: %d} {thread: %d} returns the lock.\n", __LINE__, thread->threadId);
   logData(buffer);
   flushLog();
+
+  // do not read all size data, because some data is out of range
+  if (size > 0) {
+    sprintf(buffer, "[readFromAddr] Have data out of range. Call kernelPanic().\n");
+    logData(buffer);
+    flushLog();
+    kernelPanic(thread, addr);
+  }
 
   sprintf(buffer, "[readFromAddr] Read %d data from %d to %d\n\n", originalSize, originalAddr, originalAddr + originalSize - 1);
   logData(buffer);

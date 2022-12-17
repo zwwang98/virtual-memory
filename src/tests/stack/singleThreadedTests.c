@@ -72,9 +72,18 @@ void* beyondEndOfPageThreadStackWrite(void* input) {
     return NULL;
 }
 void testSingleThreadedWriteStackBeyondEndOfPage() {
+    char buffer[1024];
+    sprintf(buffer, "\n\n[testSingleThreadedWriteStackBeyondEndOfPage] Tests start.\n");
+    logData(buffer);
+    flushLog();
+
     panicExpected = true;
     Thread* thread = createThread();
     pthread_create(&(thread->thread), NULL, beyondEndOfPageThreadStackWrite, thread);
     destroyThread(thread);
+
+    sprintf(buffer, "[testSingleThreadedWriteStackBeyondEndOfPage] Tests end.\n\n");
+    logData(buffer);
+    flushLog();
 }
 

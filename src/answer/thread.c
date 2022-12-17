@@ -56,4 +56,8 @@ void destroyThread(Thread* thread) {
 
   free(thread);
   // pthread_mutex_unlock(&lock);
+
+  sprintf(buffer, "[destroyThread] Finish destroying {thread: %d}.\n", thread->threadId);
+  logData(buffer);
+  flushLog();
 }

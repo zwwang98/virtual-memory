@@ -58,6 +58,11 @@ void testSingleThreadedWriteHeapAndReadPartial() {
 }
 
 void testSingleThreadedReadAllHeapMem() {
+    char buffer[1024];
+    sprintf(buffer, "\n[testSingleThreadedReadAllHeapMem] Test starts.\n");
+    logData(buffer);
+    flushLog();
+
     TestReadWriteInfoList *list = getTestList(1);
     int size = STACK_END_ADDR - USER_BASE_ADDR;
     list->readWriteInfoList[0] = createTestReadWriteInfo(size, size, 0, true);
@@ -67,20 +72,60 @@ void testSingleThreadedReadAllHeapMem() {
                              list->readWriteInfoList[0].outputData, size);
     destroyTestReadWriteInfoList(list);
     free(list);
+
+    sprintf(buffer, "\n[testSingleThreadedReadAllHeapMem] Test ends.\n");
+    logData(buffer);
+    flushLog();
 }
 
 void* beyondEndOfPageThreadWrite(void* input) {
+    char buffer[1024];
+    sprintf(buffer, "\n[beyondEndOfPageThreadWrite] Starts.\n");
+    logData(buffer);
+    flushLog();
+
     Thread* thread = input;
     int addr = allocateHeapMem(thread, PAGE_SIZE/2);
     void* data = createRandomData(PAGE_SIZE);
     writeToAddr(thread, addr, PAGE_SIZE, data);
     free(data);
+
+    sprintf(buffer, "\n[beyondEndOfPageThreadWrite] Ends.\n");
+    logData(buffer);
+    flushLog();
     return NULL;
 }
 void testSingleThreadedWriteHeapBeyondEndOfPage() {
+    char buffer[1024];
+    sprintf(buffer, "\n[testSingleThreadedWriteHeapBeyondEndOfPage] Test starts.\n");
+    logData(buffer);
+    flushLog();
+
+    sprintf(buffer, "\n[testSingleThreadedWriteHeapBeyondEndOfPage] {line: %d}.\n", __LINE__);
+    logData(buffer);
+    flushLog();
+
     panicExpected = true;
     Thread* thread = createThread();
+
+    sprintf(buffer, "\n[testSingleThreadedWriteHeapBeyondEndOfPage] {line: %d}.\n", __LINE__);
+    logData(buffer);
+    flushLog();
+
     pthread_create(&(thread->thread), NULL, beyondEndOfPageThreadWrite, thread);
+
+    sprintf(buffer, "\n[testSingleThreadedWriteHeapBeyondEndOfPage] {line: %d}.\n", __LINE__);
+    logData(buffer);
+    flushLog();
+
     destroyThread(thread);
+
+    sprintf(buffer, "\n[testSingleThreadedWriteHeapBeyondEndOfPage] {line: %d}.\n", __LINE__);
+    logData(buffer);
+    flushLog();
+
+    sprintf(buffer, "\n[testSingleThreadedWriteHeapBeyondEndOfPage] Test ends.\n");
+    logData(buffer);
+    flushLog();
 }
 

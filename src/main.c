@@ -11,12 +11,12 @@
 #include "system.h"
 
 // Phase 1
-// #define RUN_NON_THREADED_HEAP_TESTS
-// #define RUN_NON_THREADED_STACK_TESTS
+#define RUN_NON_THREADED_HEAP_TESTS
+#define RUN_NON_THREADED_STACK_TESTS
 
 // // Phase 1.1
 #define RUN_SINGLE_THREADED_HEAP_TESTS
-// #define RUN_SINGLE_THREADED_STACK_TESTS
+#define RUN_SINGLE_THREADED_STACK_TESTS
 
 // // // Phase 2 
 // #define RUN_MULTI_THREADED_HEAP_TESTS
@@ -58,10 +58,10 @@ int main(void) {
     RUN_TEST(testReadAllStackMem);
     #endif
     #ifdef RUN_SINGLE_THREADED_HEAP_TESTS
-    // RUN_TEST(testSingleThreadedWriteHeapAndReadFullPage);
-    // RUN_TEST(testSingleThreadedWriteHeapAndReadAcrossTwoPages);
-    // RUN_TEST(testSingleThreadedWriteHeapAndReadMiddleOfPage);
-    // RUN_TEST(testSingleThreadedWriteHeapAndReadPartial);
+    RUN_TEST(testSingleThreadedWriteHeapAndReadFullPage);
+    RUN_TEST(testSingleThreadedWriteHeapAndReadAcrossTwoPages);
+    RUN_TEST(testSingleThreadedWriteHeapAndReadMiddleOfPage);
+    RUN_TEST(testSingleThreadedWriteHeapAndReadPartial);
     RUN_TEST(testSingleThreadedWriteHeapBeyondEndOfPage);
     RUN_TEST(testSingleThreadedReadAllHeapMem);
 

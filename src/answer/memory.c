@@ -177,7 +177,7 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   logData(buffer);
   flushLog();
 
-  sprintf(buffer, "[allocateMemory] Finish allocating memory from %d to %d.\n\n", begin, end);
+  sprintf(buffer, "[allocateMemory] Finish allocating {size: %d} memory from %d to %d.\n\n", size, begin, end);
   logData(buffer);
   flushLog();
 
@@ -376,6 +376,13 @@ void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
       sprintf(buffer, "[Line] %d, kernel panic\n", __LINE__);
       logData(buffer);
       flushLog();
+
+      // return lock before kernel panic to avoid dead lock
+      pthread_mutex_unlock(&lock);
+      sprintf(buffer, "[writeToAddr] {line: %d} {thread: %d} returns the lock.\n", __LINE__, thread->threadId);
+      logData(buffer);
+      flushLog();
+
       kernelPanic(thread, addr);
     }
 
@@ -475,6 +482,12 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
   while (size > 0) {
     // not in stack or heap
     if (addr > thread->heapBottom && addr < thread->stackTop) {
+      // return lock before kernel panic to avoid dead lock
+      pthread_mutex_unlock(&lock);
+      sprintf(buffer, "[writeToAddr] {line: %d} {thread: %d} returns the lock.\n", __LINE__, thread->threadId);
+      logData(buffer);
+      flushLog();
+
       kernelPanic(thread, addr);
     }
 

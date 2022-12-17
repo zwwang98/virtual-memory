@@ -88,7 +88,7 @@ int main(void) {
     #endif
     #ifdef RUN_PAGING_TESTS
     RUN_TEST(testDataPagedInCorrectly);
-    // RUN_TEST(testDataPagedOutCorrectly);
+    // RUN_TEST(testDataPagedOutCorrectly); 
     #endif
     #ifdef EXTRA_LONG_RUNNING_TESTS
     RUN_TEST(testMultiThreadedReadAllHeapMemory);

@@ -370,7 +370,7 @@ void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
   logData(buffer);
   flushLog();
 
-  while (size > 0) {
+  while (size > 0 && ((USER_BASE_ADDR <= addr && addr < thread->heapBottom) || (thread->stackTop <= addr && addr < ALL_MEM_SIZE))) {
     // not in stack or heap
     if (addr > thread->heapBottom && addr < thread->stackTop) {
       sprintf(buffer, "[writeToAddr] {line: %d} Addr is beyond valid range. KernelPanic will be invoked..\n", __LINE__);
@@ -484,7 +484,7 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
 
   int x = bitToPrint;
 
-  while (size > 0) {
+  while (size > 0 && ((USER_BASE_ADDR <= addr && addr < thread->heapBottom) || (thread->stackTop <= addr && addr < ALL_MEM_SIZE))) {
     // not in stack or heap, stop reading
     if (addr > thread->heapBottom && addr < thread->stackTop) {
       sprintf(buffer, "[readFromAddr] {line: %d} Addr is beyond valid range. KernelPanic will be invoked..\n", __LINE__);

@@ -485,7 +485,8 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
 }
 
 char* getCacheFileName(Thread* thread, int addr) {
-  return NULL;
+  int vpn = addr / PAGE_SIZE;
+  return outPageName(thread, vpn);
 }
 
 void printOutAllUnusedFrameIntervals(Thread* thread) {

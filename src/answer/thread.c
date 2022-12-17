@@ -12,6 +12,7 @@ extern const int STACK_END_ADDR;
 extern const int NUM_USER_SPACE_PAGES;
 extern const char* RAW_SYSTEM_MEMORY_ACCESS;
 extern FrameEntry PFNTable[2048];
+extern const pthread_mutex_t lock;
 
 Thread* createThread() {
   Thread* ret = (Thread*) malloc(sizeof(Thread));
@@ -31,6 +32,7 @@ Thread* createThread() {
 }
 
 void destroyThread(Thread* thread) {
+  // pthread_mutex_lock(&lock);
   // This is line is ABSOLUTELY REQUIRED for the tests to run properly. This allows the thread to finish its work
   // DO NOT REMOVE.
   if (thread->thread) pthread_join(thread->thread, NULL);
@@ -53,4 +55,5 @@ void destroyThread(Thread* thread) {
   }
 
   free(thread);
+  // pthread_mutex_unlock(&lock);
 }

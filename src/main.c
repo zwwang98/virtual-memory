@@ -11,11 +11,11 @@
 #include "system.h"
 
 // Phase 1
-#define RUN_NON_THREADED_HEAP_TESTS
+// #define RUN_NON_THREADED_HEAP_TESTS
 // #define RUN_NON_THREADED_STACK_TESTS
 
 // // Phase 1.1
-// #define RUN_SINGLE_THREADED_HEAP_TESTS
+#define RUN_SINGLE_THREADED_HEAP_TESTS
 // #define RUN_SINGLE_THREADED_STACK_TESTS
 
 // // // Phase 2 
@@ -42,7 +42,7 @@ void tearDown() {
 
 int main(void) {
     UNITY_BEGIN();
-    // RUN_TEST(testWriteIntoKernelFails);
+    RUN_TEST(testWriteIntoKernelFails);
     #ifdef RUN_NON_THREADED_HEAP_TESTS
     RUN_TEST(testReadHeapFullPage); // use 1 page
     RUN_TEST(testReadHeapAcrossTwoPages);  // use 2 page
@@ -63,7 +63,7 @@ int main(void) {
     RUN_TEST(testSingleThreadedWriteHeapAndReadMiddleOfPage);
     RUN_TEST(testSingleThreadedWriteHeapAndReadPartial);
     RUN_TEST(testSingleThreadedWriteHeapBeyondEndOfPage);
-    RUN_TEST(testSingleThreadedReadAllHeapMem);
+    // RUN_TEST(testSingleThreadedReadAllHeapMem);
 
     #endif
     #ifdef RUN_SINGLE_THREADED_STACK_TESTS

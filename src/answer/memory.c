@@ -24,15 +24,16 @@ const int SPACE_PER_PAGE = 512;
 char RAW_SYSTEM_MEMORY_ACCESS[8 * 1024 * 1024];
 void *SYSTEM_MEMORY = RAW_SYSTEM_MEMORY_ACCESS;
 
-// typedef struct FrameEntry {
-//   int threadId;
-//   int vpn;
-//   bool isUsed;
-// } FrameEntry;
-
 // frame table
 FrameEntry PFNTable[NUM_PAGES];
 
+// https://stackoverflow.com/questions/23400097/c-confused-on-how-to-initialize-and-implement-a-pthread-mutex-and-condition-vari
+// initialize a mutex lock
+// lock - pthread_mutex_lock(&lock);
+// unlok - pthread_mutex_unlock(&lock);
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
+// some variables help for debug
 int bitToPrint = 5;
 int startIdx = 2088960;
 int startLogPageNum = 0;
@@ -94,6 +95,11 @@ bool isPageInDisc(Thread *thread, int vpn) {
 void allocateMemory(Thread *thread, int begin, int end, int size) {
   char buffer[1024];
   sprintf(buffer, "\n[allocateMemory] Start to allocate {size: %d} memory from %d to %d.\n", size, begin, end);
+  logData(buffer);
+  flushLog();
+
+  pthread_mutex_lock(&lock);
+  sprintf(buffer, "[allocateMemory] {line: %d} {thread: %d} gets the lock.\n", __LINE__, thread->threadId);
   logData(buffer);
   flushLog();
 
@@ -166,9 +172,15 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   printOutAllUnusedFrameIntervals(thread);
   printOutAllUsedFrameThreadId(thread);
 
+  pthread_mutex_unlock(&lock);
+  sprintf(buffer, "[allocateMemory] {line: %d} {thread: %d} returns the lock.\n", __LINE__, thread->threadId);
+  logData(buffer);
+  flushLog();
+
   sprintf(buffer, "[allocateMemory] Finish allocating memory from %d to %d.\n\n", begin, end);
   logData(buffer);
   flushLog();
+
 }
 
 void allocateFrameToPage(Thread* thread, int vpn) {
@@ -297,11 +309,13 @@ char* getDataArr(const void* data, int size) {
 
 void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
   char buffer[1024];
+  
   int originalSize = size;
   int originalAddr = addr;
   sprintf(buffer, "\n[writeToAddr] To write %d data from %d to %d\n", originalSize, originalAddr, originalAddr + originalSize - 1);
   logData(buffer);
   flushLog();
+
 
   if (addr < USER_BASE_ADDR) {
     // write to kernel memory, call kernelPanic()
@@ -318,6 +332,10 @@ void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
     return;
   }
 
+  pthread_mutex_lock(&lock);
+  sprintf(buffer, "[writeToAddr] {line: %d} {thread: %d} gets the lock.\n", __LINE__, thread->threadId);
+  logData(buffer);
+  flushLog();
 
   if (bitToPrint > 0) {
     char* _dataPtr = data;
@@ -410,6 +428,11 @@ void writeToAddr(const Thread* thread, int addr, int size, const void* data) {
     }
   }
 
+  pthread_mutex_unlock(&lock);
+  sprintf(buffer, "[writeToAddr] {line: %d} {thread: %d} returns the lock.\n", __LINE__, thread->threadId);
+  logData(buffer);
+  flushLog();
+
   sprintf(buffer, "[writeToAddr] Wrote %d data from %d to %d\n\n", originalSize, originalAddr, originalAddr + originalSize - 1);
   logData(buffer);
   flushLog();
@@ -437,6 +460,11 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
     flushLog();
     return;
   }
+
+  pthread_mutex_lock(&lock);
+  sprintf(buffer, "[readFromAddr] {line: %d} {thread: %d} gets the lock.\n", __LINE__, thread->threadId);
+  logData(buffer);
+  flushLog();
 
   // memcpy(outData, SYSTEM_MEMORY + addr - USER_BASE_ADDR, size);
   char partOfData[bitToPrint];
@@ -478,6 +506,11 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
     addr++;
     size--;
   }
+
+  pthread_mutex_unlock(&lock);
+  sprintf(buffer, "[readFromAddr] {line: %d} {thread: %d} returns the lock.\n", __LINE__, thread->threadId);
+  logData(buffer);
+  flushLog();
 
   sprintf(buffer, "[readFromAddr] Read %d data from %d to %d\n\n", originalSize, originalAddr, originalAddr + originalSize - 1);
   logData(buffer);

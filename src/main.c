@@ -10,17 +10,17 @@
 #include "unity.h"
 #include "system.h"
 
-// Phase 1
-#define RUN_NON_THREADED_HEAP_TESTS
-#define RUN_NON_THREADED_STACK_TESTS
+// // Phase 1
+// #define RUN_NON_THREADED_HEAP_TESTS
+// #define RUN_NON_THREADED_STACK_TESTS
 
-// Phase 1.1
-#define RUN_SINGLE_THREADED_HEAP_TESTS
-#define RUN_SINGLE_THREADED_STACK_TESTS
+// // Phase 1.1
+// #define RUN_SINGLE_THREADED_HEAP_TESTS
+// #define RUN_SINGLE_THREADED_STACK_TESTS
 
-// Phase 2 
-#define RUN_MULTI_THREADED_HEAP_TESTS
-#define RUN_MULTI_THREADED_STACK_TESTS
+// // Phase 2 
+// #define RUN_MULTI_THREADED_HEAP_TESTS
+// #define RUN_MULTI_THREADED_STACK_TESTS
 
 // Phase 3 4 5
 #define RUN_PAGING_TESTS

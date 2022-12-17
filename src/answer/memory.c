@@ -75,13 +75,13 @@ int choosePageToEvict(Thread *thread) {
 /**
  * @brief Given thread and vpn, return the expected file name of the file storing the data in this page.
  * 
- * @param thread Given thread.
+ * @param threadId Id of given thread.
  * @param vpn Given virtual page number.
  * @return char* The expected file name of the file storing the data in this page.
  */
-char* outPageName(Thread *thread, int vpn) {
+char* outPageName(int threadId, int vpn) {
   char fileName[1024];
-  snprintf(fileName, sizeof(fileName), ".page_thread_%d_vpn_%d", thread->threadId, vpn);
+  snprintf(fileName, sizeof(fileName), ".page_thread_%d_vpn_%d", threadId, vpn);
   return fileName;
 }
 
@@ -93,7 +93,8 @@ char* outPageName(Thread *thread, int vpn) {
  * @param memory Given memory pointer.
  */
 void evictPage(Thread *thread, int vpn, void *memory) {
-  char* cacheFileName = outPageName(thread, vpn);
+  int threadId = PFNTable[vpn].threadId;
+  char* cacheFileName = outPageName(threadId, vpn);
 
   thread->VPNToPFN[vpn].present = false;
 
@@ -119,7 +120,7 @@ void loadPage(Thread *thread, int vpn, void *memory) {
 
   thread->VPNToPFN[vpn].present = true;
 
-  char* cacheFileName = outPageName(thread, vpn);
+  char* cacheFileName = outPageName(thread->threadId, vpn);
   sprintf(buffer, "[loadPage] {cacheFileName: %s}\n", cacheFileName);
   logData(buffer);
   flushLog();
@@ -226,15 +227,15 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
     logData(buffer);
     flushLog();
 
-    int vpnToEvict = choosePageToEvict(thread);
-    int evictStartMemoryIdx = (vpnToEvict - 1) * PAGE_SIZE;
+    int pfnToEvict = choosePageToEvict(thread);
+    int evictStartMemoryIdx = (pfnToEvict - 1) * PAGE_SIZE;
 
     sprintf(buffer, "[allocateMemory] {line: %d} {curPageNum: %d}.\n", __LINE__, curPageNum);
     logData(buffer);
     flushLog();
 
-    evictPage(thread, vpnToEvict, RAW_SYSTEM_MEMORY_ACCESS[evictStartMemoryIdx]);
-    int pfnReleased = thread->VPNToPFN[vpnToEvict].physicalFrameNumber;
+    evictPage(thread, pfnToEvict, RAW_SYSTEM_MEMORY_ACCESS[evictStartMemoryIdx]);
+    int pfnReleased = thread->VPNToPFN[pfnToEvict].physicalFrameNumber;
 
     sprintf(buffer, "[allocateMemory] {line: %d} {curPageNum: %d}.\n", __LINE__, curPageNum);
     logData(buffer);

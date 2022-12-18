@@ -49,7 +49,7 @@ void destroyThread(Thread* thread) {
   flushLog();
 
   // release all used frames
-  for (int i = 256; i < NUM_PAGES; i++) {
+  for (int i = 0; i < NUM_PAGES; i++) {
     int pfn = thread->VPNToPFN[i].physicalFrameNumber;
     if (pfn == -1) {
       continue;
@@ -58,6 +58,7 @@ void destroyThread(Thread* thread) {
     // logData(buffer);
     // flushLog();
     PFNTable[pfn].isUsed = false;
+    PFNTable[pfn].thread = NULL;
   }
 
   sprintf(buffer, "[destroyThread] Finish destroying {thread: %d}.\n", thread->threadId);

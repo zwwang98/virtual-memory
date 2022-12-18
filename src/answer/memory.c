@@ -14,6 +14,10 @@ const int STACK_END_ADDR = 6*1024*1024;
 // There are total of 2048 pages
 const int NUM_PAGES = 2*1024;
 
+// total 256 4KB pages for kernel space (256 * 4KB = 1MB)
+const int NUM_KERNEL_SPACE_PAGES = NUM_PAGES / 8;
+
+// total 1792 4KB pages for user space (1792 * 4KB = 7MB)
 const int NUM_USER_SPACE_PAGES = NUM_PAGES * 7 / 8;
 
 // Each page has 512 Bytes to store its meta data.
@@ -107,7 +111,7 @@ void evictPage(Thread *thread, int vpn, void *memory) {
   logData(buffer);
   flushLog();
 
-  int threadId = PFNTable[vpn].threadId;
+  int threadId = PFNTable[vpn].thread->threadId;
   char cacheFileName[1024];
   snprintf(cacheFileName, sizeof(cacheFileName), ".page_thread_%d_vpn_%d", threadId, vpn);
 
@@ -177,6 +181,21 @@ bool isPageInDisc(Thread *thread, int vpn) {
 
 }
 
+/**
+ * @brief Allocate one frame to given page of given thread.
+ * 
+ * @param thraed Given thread.
+ * @param vpn Given virtual page number.
+ */
+void allocateFrameToPage(Thread *thraed, int vpn) {
+  // 
+  int firstEmptyPFN = NUM_KERNEL_SPACE_PAGES;
+  while (firstEmptyPFN < NUM_PAGES) {
+
+    firstEmptyPFN++;
+  }
+}
+
 // assign frames to thread to
 void allocateMemory(Thread *thread, int begin, int end, int size) {
   char buffer[1024];
@@ -189,7 +208,7 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   // logData(buffer);
   // flushLog();
 
-  // printOutAllUnusedFrameIntervals(thread);
+  printOutAllUnusedFrameIntervals(thread);
   // printOutAllUsedFrameThreadId(thread);
 
   int beginPageNum = begin / PAGE_SIZE;
@@ -217,7 +236,7 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
     }
     if (!PFNTable[i].isUsed) {
       // update frame table
-      PFNTable[i].threadId = thread->threadId;
+      PFNTable[i].thread = thread;
       PFNTable[i].vpn = curPageNum;
       PFNTable[i].isUsed = true;
       // update thread's page table
@@ -266,7 +285,7 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
     flushLog();
     
     // update frame table
-    PFNTable[pfnReleased].threadId = thread->threadId;
+    PFNTable[pfnReleased].thread = thread;
     PFNTable[pfnReleased].vpn = curPageNum;
     PFNTable[pfnReleased].isUsed = true;
     // update thread's page table
@@ -290,10 +309,6 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   sprintf(buffer, "[allocateMemory] Finish allocating {size: %d} memory from %d to %d.\n\n", size, begin, end);
   logData(buffer);
   flushLog();
-}
-
-void allocateFrameToPage(Thread* thread, int vpn) {
-
 }
 
 int allocateHeapMem(Thread *thread, int size) {
@@ -609,7 +624,7 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
     int pfn = thread->VPNToPFN[vpn].physicalFrameNumber;
     int memoryIdx = pfn * PAGE_SIZE + offset;
 
-    if (thread->VPNToPFN[vpn].present = false ) {
+    if (thread->VPNToPFN[vpn].present == false ) {
       // loadPage(thread, vpn, RAW_SYSTEM_MEMORY_ACCESS[(vpn - 1) * PAGE_SIZE]);
     }
 
@@ -731,10 +746,10 @@ void printOutAllUsedFrameThreadId(Thread* thread) {
 
   int i = 256;
   while (i < 2048) {
-    int preThreadId = PFNTable[i].threadId;
+    int preThreadId = PFNTable[i].thread->threadId;
     int preFrameId = i;
     // pfn i is used
-    while (i < 2048 && PFNTable[i].isUsed && PFNTable[i].threadId == preThreadId) {
+    while (i < 2048 && PFNTable[i].isUsed && PFNTable[i].thread->threadId == preThreadId) {
       allFrameUnused = false;
       i++;
     }

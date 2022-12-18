@@ -1,5 +1,8 @@
+#include "thread.h"
+
 typedef struct FrameEntry {
-  int threadId;
+  Thread* thread;
   int vpn;
   bool isUsed;
+  bool dirty;
 } FrameEntry;

@@ -89,22 +89,48 @@ void testDataPagedInCorrectly() {
 
     Thread* thread1 = createThread();
     void *data = createRandomData(PAGE_SIZE);
+
+    // fill thread1's heap
+    sprintf(buffer, "[testDataPagedInCorrectly] {thread: %d} allocateAndWriteHeapData() starts.\n", thread1->threadId);
+    logData(buffer);
+    flushLog();
     int addr = allocateAndWriteHeapData(thread1, data, PAGE_SIZE, PAGE_SIZE);
     int savedAddr = addr;
-
     while (addr !=-1) {
         addr = allocateAndWriteHeapData(thread1, data, PAGE_SIZE, PAGE_SIZE);
     }
+    sprintf(buffer, "[testDataPagedInCorrectly] {thread: %d} allocateAndWriteHeapData() ends.\n", thread1->threadId);
+    logData(buffer);
+    flushLog();
 
+    // fill thread1's stack
+    sprintf(buffer, "[testDataPagedInCorrectly] {thread: %d} allocateAndWriteStackData() starts.\n", thread1->threadId);
+    logData(buffer);
+    flushLog();
     addr = allocateAndWriteStackData(thread1, data, PAGE_SIZE, PAGE_SIZE);
-
     while (addr !=-1) {
         addr = allocateAndWriteStackData(thread1, data, PAGE_SIZE, PAGE_SIZE);
     }
+    sprintf(buffer, "[testDataPagedInCorrectly] {thread: %d} allocateAndWriteStackData() ends.\n", thread1->threadId);
+    logData(buffer);
+    flushLog();
 
     Thread* thread2 = createThread();
     void* data2 = createRandomData(PAGE_SIZE);
+
+    // use thread2's to take one frame, so that one frame havs to be evicted from existing frames,
+    // and all existing frames are owned by thread1, so thread1 have to evict one frame, and it will be vpn256 based on current clock algorithm
+    sprintf(buffer, "[testDataPagedInCorrectly] {thread: %d} allocateAndWriteHeapData() starts.\n", thread2->threadId);
+    logData(buffer);
+    flushLog();
     allocateAndWriteHeapData(thread2, data2, PAGE_SIZE, PAGE_SIZE);
+    sprintf(buffer, "[testDataPagedInCorrectly] {thread: %d} allocateAndWriteHeapData() ends.\n", thread2->threadId);
+    logData(buffer);
+    flushLog();
+
+    sprintf(buffer, "[testDataPagedInCorrectly] {savedAddr: %d}.\n", savedAddr);
+    logData(buffer);
+    flushLog();
 
     void* readData = malloc(PAGE_SIZE);
     readFromAddr(thread1, savedAddr, PAGE_SIZE, readData);

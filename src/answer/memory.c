@@ -52,7 +52,7 @@ pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 int clockPtr = 256;
 
 // some variables help for debug
-const int bitToPrint = 0;
+const int bitToPrint = 5;
 int startIdx = 2088960;
 int startLogPageNum = 0;
 
@@ -112,30 +112,50 @@ char* outPageName(int threadId, int vpn) {
 /**
  * @brief Evict given thread's given page from given memory pointer into disc.
  * 
- * @param thread Given thread.
- * @param vpn The virtual page number of the page to be evicted.
- * @param memory Given memory pointer.
+ * @param pfn The number of the frame to be evicted.
  */
-void evictPage(Thread *thread, int vpn, void *memory) {
+void evictPage(int pfn) {
   char buffer[1024];
-  sprintf(buffer, "\n\n[evictPage] Starts evict pages from {thread: %d}.\n", thread->threadId);
+  sprintf(buffer, "\n\n[evictPage] Starts evict frame {pfn: %d}.\n", pfn);
   logData(buffer);
   flushLog();
 
-  int threadId = PFNTable[vpn].thread->threadId;
+  Thread* thread = PFNTable[pfn].thread;
+  int threadId = thread->threadId;
+  int vpn = PFNTable[pfn].vpn;
+
   static char cacheFileName[1024];
   snprintf(cacheFileName, sizeof(cacheFileName), FILENAME_TEMPLATE, threadId, vpn);
 
-  sprintf(buffer, "[evictPage] {filename: %s}\n", cacheFileName);
+  sprintf(buffer, "[evictPage] {filename: %s}, {present: %d}\n", cacheFileName, thread->VPNToPFN[vpn].present);
   logData(buffer);
   flushLog();
 
   thread->VPNToPFN[vpn].present = false;
 
+  void* memoryPtr = (SYSTEM_MEMORY + (pfn - 1) * PAGE_SIZE);
+
+  sprintf(buffer, "[evictPage] {filename: %s}, {present: %d}, {memoryPtrIdx: %d}\n", cacheFileName, thread->VPNToPFN[vpn].present, (pfn - 1) * PAGE_SIZE);
+  logData(buffer);
+  flushLog();
+
+  sprintf(buffer, "[evictPage] Print out first 5 data at {memoryPtr: %d}: ", (pfn - 1) * PAGE_SIZE);
+  logData(buffer);
+  flushLog();
+  char* dataPtr = (char*) memoryPtr;
+  for (int i = 0; i < 5; i++) {
+    sprintf(buffer, "%d, ", *dataPtr++);
+    logData(buffer);
+    flushLog();
+  }
+  sprintf(buffer, "\n");
+  logData(buffer);
+  flushLog();
+
   FILE *file = fopen(cacheFileName, "w");
   // https://www.tutorialspoint.com/c_standard_library/c_function_fwrite.htm
   // write data in {memory} into {file}
-  fwrite(memory, PAGE_SIZE, 1, file);
+  fwrite(memoryPtr, PAGE_SIZE, 1, file);
   fclose(file);
 
   sprintf(buffer, "[evictPage] Ends\n\n");
@@ -144,40 +164,40 @@ void evictPage(Thread *thread, int vpn, void *memory) {
 }
 
 /**
- * @brief Load given thread's given page from disc into memory.
+ * @brief Given frame number and file name, load the data in the file and put it into the frame.
  * 
- * @param thread Given thread.
- * @param vpn The virtual page number of the page to be loaded.
- * @param memory Given memory pointer.
+ * @param pfn The number of given frame.
+ * @param filename Given cache file name.
  */
-// void loadPage(Thread *thread, int vpn, void *memory) {
-//   char buffer[1024];
-//   sprintf(buffer, "\n\n[loadPage] Loading page...\n");
-//   logData(buffer);
-//   flushLog();
+void loadPage(int pfn, char* filename) {
+  char buffer[1024];
+  sprintf(buffer, "\n\n[loadPage] Loading page...\n");
+  logData(buffer);
+  flushLog();
 
-//   thread->VPNToPFN[vpn].present = true;
+  Thread* thread = PFNTable[pfn].thread;
+  int vpn = PFNTable[pfn].vpn;
+  thread->VPNToPFN[vpn].present = true;
 
-//   char cacheFileName[1024];
-//   snprintf(cacheFileName, sizeof(cacheFileName), FILENAME_TEMPLATE, threadId, vpn);
-//   sprintf(buffer, "[loadPage] {cacheFileName: %s}\n", cacheFileName);
-//   logData(buffer);
-//   flushLog();
+  sprintf(buffer, "[loadPage] {filename: %s}\n", filename);
+  logData(buffer);
+  flushLog();
 
-//   // https://pubs.opengroup.org/onlinepubs/007904975/functions/fopen.html
-//   // open the given file whose name is {filename} in read mode
-//   FILE *file = fopen(cacheFileName, "r");
-//   if (file) {
-//       // https://www.tutorialspoint.com/c_standard_library/c_function_fread.htm
-//       // read data in {file} into {buf}
-//       fread(memory, PAGE_SIZE, 1, file);
-//       fclose(file);
-//   }
+  // https://pubs.opengroup.org/onlinepubs/007904975/functions/fopen.html
+  // open the given file whose name is {filename} in read mode
+  FILE *file = fopen(filename, "r");
+  void* memoryPtr = SYSTEM_MEMORY + (pfn - 1) * PAGE_SIZE;
+  if (file) {
+      // https://www.tutorialspoint.com/c_standard_library/c_function_fread.htm
+      // read data in {file} into {memoryPtr}
+      fread(memoryPtr, PAGE_SIZE, 1, file);
+      fclose(file);
+  }
 
-//   sprintf(buffer, "[loadPage] Page loaded...\n\n");
-//   logData(buffer);
-//   flushLog();
-// }
+  sprintf(buffer, "[loadPage] Page loaded...\n\n");
+  logData(buffer);
+  flushLog();
+}
 
 /**
  * @brief Allocate one frame to given page of given thread.
@@ -200,16 +220,15 @@ void allocateFrameToPage(Thread *thread, int vpn) {
   }
 
   if (firstEmptyPFN == NUM_PAGES) {
+    sprintf(buffer, "[allocateFrameToPage] Need evict some page.\n");
+    logData(buffer);
+    flushLog();
     firstEmptyPFN = choosePageToEvict(thread);
     if (PFNTable[firstEmptyPFN].dirty) {
       void* memoryPtr = SYSTEM_MEMORY + (firstEmptyPFN - 1) * PAGE_SIZE;
-      evictPage(thread, PFNTable[firstEmptyPFN].vpn, memoryPtr);
+      evictPage(firstEmptyPFN);
     }
   }
-
-  sprintf(buffer, "[allocateFrameToPage] Allocate {pfn: %d} to {threadId: %d} {vpn: %d}.\n", firstEmptyPFN, thread->threadId, vpn);
-  logData(buffer);
-  flushLog();
 
   // PFNTable[firstEmptyPFN]
   PFNTable[firstEmptyPFN].thread = thread;
@@ -218,7 +237,11 @@ void allocateFrameToPage(Thread *thread, int vpn) {
   PFNTable[firstEmptyPFN].dirty = false;
   // update thread's page table
   thread->VPNToPFN[vpn].physicalFrameNumber = firstEmptyPFN;
-  thread->VPNToPFN[vpn].present = 1;
+  thread->VPNToPFN[vpn].present = true;
+
+  sprintf(buffer, "[allocateFrameToPage] Allocate {pfn: %d} to {threadId: %d} {vpn: %d}, {present: %d}.\n", firstEmptyPFN, thread->threadId, vpn, thread->VPNToPFN[vpn].present);
+  logData(buffer);
+  flushLog();
 
   sprintf(buffer, "[allocateFrameToPage] ends.\n\n");
   logData(buffer);
@@ -406,23 +429,23 @@ void writeToAddr(Thread* thread, int addr, int size, const void* data) {
   logData(buffer);
   flushLog();
 
-  if (bitToPrint > 0) {
-    char* _dataPtr = (char*) data;
-    char* partOfData;
-    sprintf(buffer, "[writeToAddr] {line: %d} Show frist %d numbers of data: ", __LINE__, bitToPrint);
-    logData(buffer);
-    flushLog();
+  // if (bitToPrint > 0) {
+  //   char* _dataPtr = (char*) data;
+  //   char* partOfData;
+  //   sprintf(buffer, "[writeToAddr] {line: %d} Show frist %d numbers of data: ", __LINE__, bitToPrint);
+  //   logData(buffer);
+  //   flushLog();
 
-    for (int i = 0; i < bitToPrint; i++) {
-      if (i == bitToPrint - 1) {
-        sprintf(buffer, "%x\n", *_dataPtr++);
-      } else {
-        sprintf(buffer, "%x, ", *_dataPtr++);
-      }
-      logData(buffer);
-      flushLog();
-    }
-  }
+  //   for (int i = 0; i < bitToPrint; i++) {
+  //     if (i == bitToPrint - 1) {
+  //       sprintf(buffer, "0x%x\n", *_dataPtr++);
+  //     } else {
+  //       sprintf(buffer, "0x%x, ", *_dataPtr++);
+  //     }
+  //     logData(buffer);
+  //     flushLog();
+  //   }
+  // }
 
   char* dataPtr = (char*) data;
   sprintf(buffer, "[Line] %d\n", __LINE__);
@@ -439,6 +462,7 @@ void writeToAddr(Thread* thread, int addr, int size, const void* data) {
   logData(buffer);
   flushLog();
 
+  int z = 1;
   while (size > 0 && ((USER_BASE_ADDR <= addr && addr < thread->heapBottom) || (thread->stackTop <= addr && addr < ALL_MEM_SIZE))) {
     // not in stack or heap
     if (addr > thread->heapBottom && addr < thread->stackTop) {
@@ -451,9 +475,10 @@ void writeToAddr(Thread* thread, int addr, int size, const void* data) {
     int vpn = addr / PAGE_SIZE;
     int offset = addr % PAGE_SIZE;
     int pfn = thread->VPNToPFN[vpn].physicalFrameNumber;
-    int memoryIdx = pfn * PAGE_SIZE + offset;
-    if (size <= 2048 && x-- > 0) {
-      sprintf(buffer, "[writeToAddr] {line: %d} {vpn: %d}, {offset: %d}, {pfn: %d}, {memoryIdx: %d}, {addr: %d}, {dataPtr: 0x%x}.\n", __LINE__, vpn, offset, pfn, memoryIdx, addr, *(dataPtr));
+    int memoryIdx = (pfn - 1) * PAGE_SIZE + offset;
+
+    if (z-- > 0) {
+      sprintf(buffer, "[writeToAddr] {line: %d} {vpn: %d} {present: %d}\n", __LINE__, vpn, thread->VPNToPFN[vpn].present);
       logData(buffer);
       flushLog();
     }
@@ -469,8 +494,7 @@ void writeToAddr(Thread* thread, int addr, int size, const void* data) {
     if (originalSize - size < bitToPrint) {
       partOfData[originalSize - size] = *dataPtr;
     }
-    // if ((originalSize - size >= startIdx) && x-- > 0) {
-    if (size <= 2048 && x-- > 0) {
+    if (vpn == 256) {
       sprintf(buffer, "[writeToAddr] {line: %d}, {memory: 0x%x}, {dataPtr: 0x%x}.\n", __LINE__, RAW_SYSTEM_MEMORY_ACCESS[memoryIdx], *(dataPtr));
       logData(buffer);
       flushLog();
@@ -490,20 +514,20 @@ void writeToAddr(Thread* thread, int addr, int size, const void* data) {
   flushLog();
   // memcpy(SYSTEM_MEMORY + addr - USER_BASE_ADDR, data, size);
 
-  if (bitToPrint > 0) {
-    sprintf(buffer, "[writeToAddr] {Line: %d} Show frist %d numbers of data that have been written into memory: ", __LINE__, bitToPrint);
-    logData(buffer);
-    flushLog();
-    for (int i = 0; i < bitToPrint; i++) {
-      if (i == bitToPrint - 1) {
-        sprintf(buffer, "%x\n", partOfData[i]);
-      } else {
-        sprintf(buffer, "%x, ", partOfData[i]);
-      }
-      logData(buffer);
-      flushLog();
-    }
-  }
+  // if (bitToPrint > 0) {
+  //   sprintf(buffer, "[writeToAddr] {Line: %d} Show frist %d numbers of data that have been written into memory: ", __LINE__, bitToPrint);
+  //   logData(buffer);
+  //   flushLog();
+  //   for (int i = 0; i < bitToPrint; i++) {
+  //     if (i == bitToPrint - 1) {
+  //       sprintf(buffer, "0x%x\n", partOfData[i]);
+  //     } else {
+  //       sprintf(buffer, "0x%x, ", partOfData[i]);
+  //     }
+  //     logData(buffer);
+  //     flushLog();
+  //   }
+  // }
 
   pthread_mutex_unlock(&lock);
   sprintf(buffer, "[writeToAddr] {line: %d} {thread: %d} returns the lock.\n", __LINE__, thread->threadId);
@@ -556,6 +580,7 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
 
   int x = bitToPrint;
 
+  int z = 2;
   while (size > 0 && ((USER_BASE_ADDR <= addr && addr < thread->heapBottom) || (thread->stackTop <= addr && addr < ALL_MEM_SIZE))) {
     // not in stack or heap, stop reading
     if (addr > thread->heapBottom && addr < thread->stackTop) {
@@ -569,9 +594,25 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
     int offset = addr % PAGE_SIZE;
     int pfn = thread->VPNToPFN[vpn].physicalFrameNumber;
     int memoryIdx = pfn * PAGE_SIZE + offset;
+    if (z-- > 0) {
+      sprintf(buffer, "[readFromAddr] {line: %d} {vpn: %d} {present: %d}\n", __LINE__, vpn, thread->VPNToPFN[vpn].present);
+      logData(buffer);
+      flushLog();
+    }
+    if (z-- > 0 && !thread->VPNToPFN[vpn].present) {
+      sprintf(buffer, "[readFromAddr] {line: %d} Need to assign a frame to {vpn: %d} and then load from cache\n", __LINE__, vpn);
+      logData(buffer);
+      flushLog();
+      allocateFrameToPage(thread, vpn);
 
-    if (thread->VPNToPFN[vpn].present == false ) {
-      // loadPage(thread, vpn, RAW_SYSTEM_MEMORY_ACCESS[(vpn - 1) * PAGE_SIZE]);
+      int curPfn = thread->VPNToPFN[vpn].physicalFrameNumber;
+
+      static char cacheFileName[1024];
+      int vpn = addr / PAGE_SIZE;
+      snprintf(cacheFileName, sizeof(cacheFileName), FILENAME_TEMPLATE, thread->threadId, vpn);
+      
+      // given frame {pfn: curPfn} and cache file name, load the data in the file into the frame
+      loadPage(curPfn, cacheFileName);
     }
 
     thread->VPNToPFN[vpn].accessed = true;

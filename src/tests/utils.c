@@ -8,7 +8,7 @@
 #include "memory.h"
 
 // De-comments this line to turn the loggin on.
-#define LOGGING_ON
+// #define LOGGING_ON
 
 extern const int PAGE_SIZE;
 const int MAX_BUFFER_SIZE=4096;

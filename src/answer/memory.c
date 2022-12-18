@@ -593,7 +593,7 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
     int vpn = addr / PAGE_SIZE;
     int offset = addr % PAGE_SIZE;
     int pfn = thread->VPNToPFN[vpn].physicalFrameNumber;
-    int memoryIdx = pfn * PAGE_SIZE + offset;
+    int memoryIdx = (pfn - 1) * PAGE_SIZE + offset;
     if (z-- > 0) {
       sprintf(buffer, "[readFromAddr] {line: %d} {vpn: %d} {present: %d}\n", __LINE__, vpn, thread->VPNToPFN[vpn].present);
       logData(buffer);

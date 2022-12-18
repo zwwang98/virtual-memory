@@ -12,7 +12,7 @@ extern const int STACK_END_ADDR;
 extern const int NUM_USER_SPACE_PAGES;
 extern const char* RAW_SYSTEM_MEMORY_ACCESS;
 extern FrameEntry PFNTable[2048];
-extern const pthread_mutex_t lock;
+extern pthread_mutex_t lock;
 
 Thread* createThread() {
   Thread* ret = (Thread*) malloc(sizeof(Thread));

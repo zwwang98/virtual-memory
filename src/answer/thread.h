@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "MemoryManagement.h"
 #include "PageTableEntry.h"
 
 extern const int NUM_PAGES;

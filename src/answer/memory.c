@@ -433,17 +433,6 @@ void printOutDataGivenLen(char data[], int len, int bitToPrint) {
   }
 }
 
-char* getDataArr(const void* data, int size) {
-  char dataArr[size];
-  char* dataPtr = data;
-  for (int i = 0; i < size; i++) {
-    dataArr[i] = *dataPtr++;
-  }
-  return dataArr;
-}
-
-
-
 void writeToAddr(Thread* thread, int addr, int size, const void* data) {
   char buffer[1024];
   
@@ -686,7 +675,7 @@ void readFromAddr(Thread* thread, int addr, int size, void* outData) {
 }
 
 char* getCacheFileName(Thread* thread, int addr) {
-  char buffer[1024];
+  static char buffer[1024];
   sprintf(buffer, "\n\n[getCacheFileName] Start \n");
   logData(buffer);
   flushLog();

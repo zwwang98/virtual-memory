@@ -43,3 +43,5 @@
   Add a lock over the whole frame table or let each frame has its own lock, so that no other process could not evict the frame.
 
 9.  A single lock for the whole VM system would make synchronization easy, but limit parallelism.  On the other hand, using many locks complicates synchronization and raises the possibility for deadlock but allows for high parallelism.  Explain where your design falls along this continuum and why you chose to design it this way.
+  1. I use a single lock over the whole VM system.
+  2. Because it is relatively easier to implement and I do not have time to apply the more complicated locking system.

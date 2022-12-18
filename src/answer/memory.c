@@ -109,7 +109,7 @@ char* outPageName(int threadId, int vpn) {
  */
 void evictPage(Thread *thread, int vpn, void *memory) {
   char buffer[1024];
-  sprintf(buffer, "\n\n[evictPage] Starts\n");
+  sprintf(buffer, "\n\n[evictPage] Starts evict pages from {thread: %d}.\n", thread->threadId);
   logData(buffer);
   flushLog();
 
@@ -198,6 +198,7 @@ void allocateFrameToPage(Thread *thread, int vpn) {
   PFNTable[firstEmptyPFN].thread = thread;
   PFNTable[firstEmptyPFN].vpn = vpn;
   PFNTable[firstEmptyPFN].isUsed = true;
+  PFNTable[firstEmptyPFN].dirty = false;
   // update thread's page table
   thread->VPNToPFN[vpn].physicalFrameNumber = firstEmptyPFN;
   thread->VPNToPFN[vpn].present = 1;
@@ -215,7 +216,7 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   // logData(buffer);
   // flushLog();
 
-  // printOutAllUnusedFrameIntervals(thread);
+  printOutAllUnusedFrameIntervals(thread);
 
   sprintf(buffer, "\n[allocateMemory] {line: %d}\n", __LINE__);
   logData(buffer);
@@ -236,37 +237,21 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
 
   int x = bitToPrint;
 
-  // assign frames from beginPageNum to endPageNum
-  // frame 0-255 == 1MB, saved for kernel space
-  for (int i = 256; i < 2048; i++) {
-    while (curPageNum <= endPageNum && thread->VPNToPFN[curPageNum].physicalFrameNumber != -1) {
-      // sprintf(buffer, "[allocateMemory] Skip assigning frame to thread %d page {vpn: %d}, because it already has a frame  %d.\n", thread->threadId, curPageNum, thread->VPNToPFN[curPageNum]);
-      // logData(buffer);
-      // flushLog();
-      curPageNum++;
-    }
-    if (curPageNum > endPageNum) {
-      break;
-    }
-    if (!PFNTable[i].isUsed) {
-      // update frame table
-      PFNTable[i].thread = thread;
-      PFNTable[i].vpn = curPageNum;
-      PFNTable[i].isUsed = true;
-      // update thread's page table
-      thread->VPNToPFN[curPageNum].physicalFrameNumber = i;
-      thread->VPNToPFN[curPageNum].present = 1;
-
-      // // log
-      // if (curPageNum >= startLogPageNum && x-- > 0) {
-      //   sprintf(buffer, "[allocateMemory] {line: %d} Assign frame {pfn: %d} to thread %d page {vpn: %d}.\n", __LINE__, i, thread->threadId, curPageNum);
-      //   logData(buffer);
-      //   flushLog();
-      // }
-
-      curPageNum++;
-    }
+  while (curPageNum <= endPageNum) {
+    allocateFrameToPage(thread, curPageNum);
+    curPageNum++;
   }
+
+  //     // // log
+  //     // if (curPageNum >= startLogPageNum && x-- > 0) {
+  //     //   sprintf(buffer, "[allocateMemory] {line: %d} Assign frame {pfn: %d} to thread %d page {vpn: %d}.\n", __LINE__, i, thread->threadId, curPageNum);
+  //     //   logData(buffer);
+  //     //   flushLog();
+  //     // }
+
+  //     curPageNum++;
+  //   }
+  // }
 
   // for some unknown reason, there are some pages not given frames
   sprintf(buffer, "[allocateMemory] {begin: %d}, {beginPageNum: %d}, {end: %d}, {endPageNum: %d}, {curPageNum: %d}.\n", begin, beginPageNum, end, endPageNum, curPageNum);
@@ -278,40 +263,6 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   //   logData(buffer);
   //   flushLog();
   // }
-
-  while (curPageNum <= endPageNum) {
-    sprintf(buffer, "[allocateMemory] {line: %d} {curPageNum: %d}.\n", __LINE__, curPageNum);
-    logData(buffer);
-    flushLog();
-
-    int pfnToEvict = choosePageToEvict(thread);
-    int evictStartMemoryIdx = (pfnToEvict - 1) * PAGE_SIZE;
-
-    sprintf(buffer, "[allocateMemory] {line: %d} {curPageNum: %d}.\n", __LINE__, curPageNum);
-    logData(buffer);
-    flushLog();
-
-    void* memoryPtr = SYSTEM_MEMORY + evictStartMemoryIdx;
-    evictPage(thread, pfnToEvict, memoryPtr);
-    int pfnReleased = thread->VPNToPFN[pfnToEvict].physicalFrameNumber;
-
-    sprintf(buffer, "[allocateMemory] {line: %d} {curPageNum: %d}.\n", __LINE__, curPageNum);
-    logData(buffer);
-    flushLog();
-    
-    // update frame table
-    PFNTable[pfnReleased].thread = thread;
-    PFNTable[pfnReleased].vpn = curPageNum;
-    PFNTable[pfnReleased].isUsed = true;
-    // update thread's page table
-    thread->VPNToPFN[curPageNum].physicalFrameNumber = pfnReleased;
-    thread->VPNToPFN[curPageNum].present = pfnReleased;
-
-    curPageNum++;
-    sprintf(buffer, "[allocateMemory] {line: %d} {curPageNum: %d}.\n", __LINE__, curPageNum);
-    logData(buffer);
-    flushLog();
-  }
 
   // printOutAllUnusedFrameIntervals(thread);
   // printOutAllUsedFrameThreadId(thread);

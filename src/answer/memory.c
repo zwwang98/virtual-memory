@@ -33,6 +33,15 @@ void *SYSTEM_MEMORY = RAW_SYSTEM_MEMORY_ACCESS;
 // frame table
 FrameEntry PFNTable[NUM_PAGES];
 
+void initPFNTable() {
+  for (int pfn = 0; pfn < NUM_PAGES; pfn++) {
+    PFNTable[pfn].thread = NULL;
+    PFNTable[pfn].isUsed = false;
+    PFNTable[pfn].dirty = false;
+    PFNTable[pfn].vpn = 0;
+  }
+}
+
 // https://stackoverflow.com/questions/23400097/c-confused-on-how-to-initialize-and-implement-a-pthread-mutex-and-condition-vari
 // initialize a mutex lock
 // lock - pthread_mutex_lock(&lock);
@@ -217,7 +226,7 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   // flushLog();
 
   printOutAllUnusedFrameIntervals(thread);
-  // printOutAllUsedFrameThreadId(thread);
+  printOutAllUsedFrameThreadId(thread);
 
   int beginPageNum = begin / PAGE_SIZE;
   int endPageNum = end / PAGE_SIZE;
@@ -434,6 +443,7 @@ void writeToAddr(Thread* thread, int addr, int size, const void* data) {
     }
 
     thread->VPNToPFN[vpn].accessed = 1;
+    PFNTable[pfn].dirty = true;
 
     RAW_SYSTEM_MEMORY_ACCESS[memoryIdx] = *dataPtr;
     // sprintf(buffer, "[Line] %d\n", __LINE__);
@@ -657,7 +667,7 @@ void printOutAllUnusedFrameIntervals(Thread* thread) {
 
 void printOutAllUsedFrameThreadId(Thread* thread) {
   char buffer[1024];
-  sprintf(buffer, "\n[printOutAllUsedFrameThreadId] {line: %d} {thread: %d} Start to print out unused frame: ", __LINE__, thread->threadId);
+  sprintf(buffer, "\n[printOutAllUsedFrameThreadId] {line: %d} {thread: %d} Start to print out used frame: ", __LINE__, thread->threadId);
   logData(buffer);
   flushLog();
 
@@ -669,6 +679,7 @@ void printOutAllUsedFrameThreadId(Thread* thread) {
     if (PFNTable[pfn].thread == NULL) {
       continue;
     }
+    allFrameUnused = false;
     // get all frame owned by current thread
     int curThreadId = PFNTable[pfn].thread->threadId;
     int j = pfn;
@@ -686,43 +697,6 @@ void printOutAllUsedFrameThreadId(Thread* thread) {
 
     pfn = j - 1;
   }
-  sprintf(buffer, "\n");
-  logData(buffer);
-  flushLog();
-
-  // int i = 256;
-
-  // while (i < 2048) {
-  //   // pfn i is not used
-  //   while (i < 2048 && !PFNTable[i].isUsed) {
-  //     // sprintf(buffer, "[printOutAllUsedFrameThreadId] {line: %d}, {i: %d}.\n", __LINE__, i);
-  //     // logData(buffer);
-  //     // flushLog();
-  //     i++;
-  //   }
-
-  //   if ()
-  //   int preThreadId = PFNTable[i].thread->threadId;
-
-  //   int preFrameId = i;
-  //   // pfn i is used
-  //   while (i < 2048 && PFNTable[i].thread && PFNTable[i].thread->threadId == preThreadId) {
-  //     allFrameUnused = false;
-  //     i++;
-  //   }
-  //   // after the while loop, [preFrameId,i-1] is used by same thread
-  //   if (preFrameId <= i - 1) {
-  //     sprintf(buffer, "[printOutAllUsedFrameThreadId] {line: %d} frame[%d, %d] is used by {threadId: %d}.\n", __LINE__, preFrameId, i - 1, preThreadId);
-  //     logData(buffer);
-  //     flushLog();
-  //   }
-
-  //   // sprintf(buffer, "[printOutAllUsedFrameThreadId] {line: %d}, {i: %d}.\n", __LINE__, i);
-  //   // logData(buffer);
-  //   // flushLog();
-
-  // }
-
   sprintf(buffer, "\n");
   logData(buffer);
   flushLog();

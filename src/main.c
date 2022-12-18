@@ -26,7 +26,7 @@
 #define RUN_PAGING_TESTS
 
 // Phase ....
-//#define EXTRA_LONG_RUNNING_TESTS
+#define EXTRA_LONG_RUNNING_TESTS
 
 
 extern bool panicExpected;

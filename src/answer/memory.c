@@ -95,7 +95,7 @@ int choosePageToEvict(Thread *thread) {
  * @return char* The expected file name of the file storing the data in this page.
  */
 char* outPageName(int threadId, int vpn) {
-  char fileName[1024];
+  static char fileName[1024];
   snprintf(fileName, sizeof(fileName), FILENAME_TEMPLATE, threadId, vpn);
   return fileName;
 }
@@ -189,7 +189,8 @@ void allocateFrameToPage(Thread *thread, int vpn) {
   if (firstEmptyPFN == NUM_PAGES) {
     firstEmptyPFN = choosePageToEvict(thread);
     if (PFNTable[firstEmptyPFN].dirty) {
-      evictPage(thread, PFNTable[firstEmptyPFN].vpn, (firstEmptyPFN - 1) * PAGE_SIZE);
+      void* memoryPtr = SYSTEM_MEMORY + (firstEmptyPFN - 1) * PAGE_SIZE;
+      evictPage(thread, PFNTable[firstEmptyPFN].vpn, memoryPtr);
     }
   }
 
@@ -290,7 +291,8 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
     logData(buffer);
     flushLog();
 
-    evictPage(thread, pfnToEvict, RAW_SYSTEM_MEMORY_ACCESS[evictStartMemoryIdx]);
+    void* memoryPtr = SYSTEM_MEMORY + evictStartMemoryIdx;
+    evictPage(thread, pfnToEvict, memoryPtr);
     int pfnReleased = thread->VPNToPFN[pfnToEvict].physicalFrameNumber;
 
     sprintf(buffer, "[allocateMemory] {line: %d} {curPageNum: %d}.\n", __LINE__, curPageNum);
@@ -464,7 +466,7 @@ void writeToAddr(Thread* thread, int addr, int size, const void* data) {
   flushLog();
 
   if (bitToPrint > 0) {
-    char* _dataPtr = data;
+    char* _dataPtr = (char*) data;
     char* partOfData;
     sprintf(buffer, "[writeToAddr] {line: %d} Show frist %d numbers of data: ", __LINE__, bitToPrint);
     logData(buffer);
@@ -481,7 +483,7 @@ void writeToAddr(Thread* thread, int addr, int size, const void* data) {
     }
   }
 
-  char* dataPtr = data;
+  char* dataPtr = (char*) data;
   sprintf(buffer, "[Line] %d\n", __LINE__);
   logData(buffer);
   flushLog();

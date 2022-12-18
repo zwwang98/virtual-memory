@@ -4,6 +4,7 @@
 #include "thread.h"
 #include "utils.h"
 #include "unity.h"
+#include "unistd.h"
 
 extern const int PAGE_SIZE;
 extern const int USER_BASE_ADDR;
@@ -15,7 +16,7 @@ void testDataPagedOutCorrectly() {
     flushLog();
 
     Thread* thread1 = createThread();
-    sprintf(buffer, "[testDataPagedOutCorrectly] {thread1: %d}.\n", thread1->threadId);
+    sprintf(buffer, "[testDataPagedOutCorrectly] {line: %d} {thread1: %d}.\n", __LINE__, thread1->threadId);
     logData(buffer);
     flushLog();
 
@@ -48,9 +49,19 @@ void testDataPagedOutCorrectly() {
     FILE* file = fopen(fileName, "r+");
     void* fileData = malloc(PAGE_SIZE);
 
-    sprintf(buffer, "\n\n[testDataPagedOutCorrectly] {line: %d}, {fileName: %s}, {thread1 id: %d}, {thread2: %d}.\n", __LINE__, fileName, thread1->threadId, thread2->threadId);
+    sprintf(buffer, "[testDataPagedOutCorrectly] {line: %d}, {fileName: %s}, {thread1 id: %d}, {thread2: %d}.\n", __LINE__, fileName, thread1->threadId, thread2->threadId);
     logData(buffer);
     flushLog();
+
+    if (access(fileName, F_OK) == 0) {
+        sprintf(buffer, "[testDataPagedOutCorrectly] {line: %d}, {fileName: %s} exists.\n", __LINE__, fileName);
+        logData(buffer);
+        flushLog();
+    } else {
+        sprintf(buffer, "[testDataPagedOutCorrectly] {line: %d}, {fileName: %s} does not exist.\n", __LINE__, fileName);
+        logData(buffer);
+        flushLog();
+    }
 
     fread(fileData, 1,  PAGE_SIZE, file);
 

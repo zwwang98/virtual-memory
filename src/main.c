@@ -26,7 +26,7 @@
 #define RUN_PAGING_TESTS
 
 // // Phase ....
-// #define EXTRA_LONG_RUNNING_TESTS
+#define EXTRA_LONG_RUNNING_TESTS
 
 
 extern bool panicExpected;
@@ -42,7 +42,7 @@ void tearDown() {
 
 int main(void) {
     UNITY_BEGIN();
-    // RUN_TEST(testWriteIntoKernelFails);
+    RUN_TEST(testWriteIntoKernelFails);
     #ifdef RUN_NON_THREADED_HEAP_TESTS
     RUN_TEST(testReadHeapFullPage); // use 1 page
     RUN_TEST(testReadHeapAcrossTwoPages);  // use 2 page
@@ -88,7 +88,7 @@ int main(void) {
     #endif
     #ifdef RUN_PAGING_TESTS
     RUN_TEST(testDataPagedInCorrectly);
-    // RUN_TEST(testDataPagedOutCorrectly);
+    RUN_TEST(testDataPagedOutCorrectly);
     #endif
     #ifdef EXTRA_LONG_RUNNING_TESTS
     RUN_TEST(testMultiThreadedReadAllHeapMemory);

@@ -3,6 +3,8 @@
 #include "FrameTable.h"
 #include <string.h>
 
+#define FILENAME_TEMPLATE ".page_thread_%d_vpn_%d"
+
 // 4k is the size of a page
 const int PAGE_SIZE= 4*1024;
 // A total of 8M exists in memory
@@ -41,7 +43,7 @@ pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 int clockPtr = 256;
 
 // some variables help for debug
-int bitToPrint = 0;
+const int bitToPrint = 0;
 int startIdx = 2088960;
 int startLogPageNum = 0;
 
@@ -94,7 +96,7 @@ int choosePageToEvict(Thread *thread) {
  */
 char* outPageName(int threadId, int vpn) {
   char fileName[1024];
-  snprintf(fileName, sizeof(fileName), ".page_thread_%d_vpn_%d", threadId, vpn);
+  snprintf(fileName, sizeof(fileName), FILENAME_TEMPLATE, threadId, vpn);
   return fileName;
 }
 
@@ -113,7 +115,7 @@ void evictPage(Thread *thread, int vpn, void *memory) {
 
   int threadId = PFNTable[vpn].thread->threadId;
   char cacheFileName[1024];
-  snprintf(cacheFileName, sizeof(cacheFileName), ".page_thread_%d_vpn_%d", threadId, vpn);
+  snprintf(cacheFileName, sizeof(cacheFileName), FILENAME_TEMPLATE, threadId, vpn);
 
   sprintf(buffer, "[evictPage] {filename: %s}\n", cacheFileName);
   logData(buffer);
@@ -148,7 +150,7 @@ void evictPage(Thread *thread, int vpn, void *memory) {
 //   thread->VPNToPFN[vpn].present = true;
 
 //   char cacheFileName[1024];
-//   snprintf(cacheFileName, sizeof(cacheFileName), ".page_thread_%d_vpn_%d", threadId, vpn);
+//   snprintf(cacheFileName, sizeof(cacheFileName), FILENAME_TEMPLATE, threadId, vpn);
 //   sprintf(buffer, "[loadPage] {cacheFileName: %s}\n", cacheFileName);
 //   logData(buffer);
 //   flushLog();
@@ -167,19 +169,6 @@ void evictPage(Thread *thread, int vpn, void *memory) {
 //   logData(buffer);
 //   flushLog();
 // }
-
-
-/**
- * @brief Check the existence of page in disc given thread and vpn.
- * 
- * @param thread Given thread.
- * @param vpn Given virtual page number of given thread.
- * @return true If the data of that page has been swapped into disc before.
- * @return false If the data of that page has never been swapped into disc before.
- */
-bool isPageInDisc(Thread *thread, int vpn) {
-
-}
 
 /**
  * @brief Allocate one frame to given page of given thread.
@@ -208,8 +197,15 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   // logData(buffer);
   // flushLog();
 
-  printOutAllUnusedFrameIntervals(thread);
+  // printOutAllUnusedFrameIntervals(thread);
+
+  sprintf(buffer, "\n[allocateMemory] {line: %d}\n", __LINE__);
+  logData(buffer);
+  flushLog();
   // printOutAllUsedFrameThreadId(thread);
+  sprintf(buffer, "\n[allocateMemory] {line: %d}\n", __LINE__);
+  logData(buffer);
+  flushLog();
 
   int beginPageNum = begin / PAGE_SIZE;
   int endPageNum = end / PAGE_SIZE;
@@ -680,7 +676,7 @@ char* getCacheFileName(Thread* thread, int addr) {
 
   char cacheFileName[1024];
   int vpn = addr / PAGE_SIZE;
-  snprintf(cacheFileName, sizeof(cacheFileName), ".page_thread_%d_vpn_%d", thread->threadId, vpn);
+  snprintf(cacheFileName, sizeof(cacheFileName), FILENAME_TEMPLATE, thread->threadId, vpn);
 
   sprintf(buffer, "[getCacheFileName] End\n");
   logData(buffer);

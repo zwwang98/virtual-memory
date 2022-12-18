@@ -31,6 +31,26 @@ Thread* createThread() {
   return ret;
 }
 
+/***/
+void removeLocalCacheFile(Thread* thread) {
+  char buffer[1024];
+  sprintf(buffer, "\n\n[removeLocalCacheFile] Start to remove cache files of {thread: %d}.\n", thread->threadId);
+  logData(buffer);
+  flushLog();
+  char filename[1024];
+  for (int i = 0; i < NUM_PAGES; i++) {
+    snprintf(filename, sizeof(filename), ".page_thread_%d_vpn_%d", thread->threadId, i);
+    if (remove(filename) == 0) {
+      sprintf(buffer, "[removeLocalCacheFile] Remvoed {filename: %s} successfully.\n", filename);
+      logData(buffer);
+      flushLog();
+    }
+  }
+  sprintf(buffer, "\n[removeLocalCacheFile] Finish removing cache files.\n\n");
+  logData(buffer);
+  flushLog();
+}
+
 void destroyThread(Thread* thread) {
 
   // This is line is ABSOLUTELY REQUIRED for the tests to run properly. This allows the thread to finish its work
@@ -60,6 +80,8 @@ void destroyThread(Thread* thread) {
     PFNTable[pfn].isUsed = false;
     PFNTable[pfn].thread = NULL;
   }
+
+  removeLocalCacheFile(thread);
 
   sprintf(buffer, "[destroyThread] Finish destroying {thread: %d}.\n", thread->threadId);
   logData(buffer);

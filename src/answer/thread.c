@@ -31,7 +31,11 @@ Thread* createThread() {
   return ret;
 }
 
-/***/
+/**
+ * @brief Remove given thread's local cache files if exists.
+ * 
+ * @param thread Given thread.
+ */
 void removeLocalCacheFile(Thread* thread) {
   char buffer[1024];
   sprintf(buffer, "\n\n[removeLocalCacheFile] Start to remove cache files of {thread: %d}.\n", thread->threadId);

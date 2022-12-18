@@ -186,7 +186,11 @@ void evictPage(Thread *thread, int vpn, void *memory) {
  * @param vpn Given virtual page number.
  */
 void allocateFrameToPage(Thread *thread, int vpn) {
-  // 
+  char buffer[1024];
+  sprintf(buffer, "\n\n[allocateFrameToPage] Starts.\n");
+  logData(buffer);
+  flushLog();
+
   int firstEmptyPFN = NUM_KERNEL_SPACE_PAGES;
   while (firstEmptyPFN < NUM_PAGES) {
     if (!PFNTable[firstEmptyPFN].isUsed) {
@@ -203,6 +207,10 @@ void allocateFrameToPage(Thread *thread, int vpn) {
     }
   }
 
+  sprintf(buffer, "[allocateFrameToPage] Allocate {pfn: %d} to {threadId: %d} {vpn: %d}.\n", firstEmptyPFN, thread->threadId, vpn);
+  logData(buffer);
+  flushLog();
+
   // PFNTable[firstEmptyPFN]
   PFNTable[firstEmptyPFN].thread = thread;
   PFNTable[firstEmptyPFN].vpn = vpn;
@@ -211,6 +219,10 @@ void allocateFrameToPage(Thread *thread, int vpn) {
   // update thread's page table
   thread->VPNToPFN[vpn].physicalFrameNumber = firstEmptyPFN;
   thread->VPNToPFN[vpn].present = 1;
+
+  sprintf(buffer, "[allocateFrameToPage] ends.\n\n");
+  logData(buffer);
+  flushLog();
 }
 
 // assign frames to thread to
@@ -221,9 +233,9 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   flushLog();
 
   pthread_mutex_lock(&lock);
-  // sprintf(buffer, "[allocateMemory] {line: %d} {thread: %d} gets the lock.\n", __LINE__, thread->threadId);
-  // logData(buffer);
-  // flushLog();
+  sprintf(buffer, "[allocateMemory] {line: %d} {thread: %d} gets the lock.\n", __LINE__, thread->threadId);
+  logData(buffer);
+  flushLog();
 
   printOutAllUnusedFrameIntervals(thread);
   printOutAllUsedFrameThreadId(thread);
@@ -246,9 +258,13 @@ void allocateMemory(Thread *thread, int begin, int end, int size) {
   logData(buffer);
   flushLog();
 
+
   sprintf(buffer, "[allocateMemory] Finish allocating {size: %d} memory from %d to %d.\n\n", size, begin, end);
   logData(buffer);
   flushLog();
+
+  printOutAllUnusedFrameIntervals(thread);
+  printOutAllUsedFrameThreadId(thread);
 }
 
 int allocateHeapMem(Thread *thread, int size) {

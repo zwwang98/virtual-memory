@@ -176,13 +176,30 @@ void evictPage(Thread *thread, int vpn, void *memory) {
  * @param thraed Given thread.
  * @param vpn Given virtual page number.
  */
-void allocateFrameToPage(Thread *thraed, int vpn) {
+void allocateFrameToPage(Thread *thread, int vpn) {
   // 
   int firstEmptyPFN = NUM_KERNEL_SPACE_PAGES;
   while (firstEmptyPFN < NUM_PAGES) {
-
+    if (!PFNTable[firstEmptyPFN].isUsed) {
+      break;
+    }
     firstEmptyPFN++;
   }
+
+  if (firstEmptyPFN == NUM_PAGES) {
+    firstEmptyPFN = choosePageToEvict(thread);
+    if (PFNTable[firstEmptyPFN].dirty) {
+      evictPage(thread, PFNTable[firstEmptyPFN].vpn, (firstEmptyPFN - 1) * PAGE_SIZE);
+    }
+  }
+
+  // PFNTable[firstEmptyPFN]
+  PFNTable[firstEmptyPFN].thread = thread;
+  PFNTable[firstEmptyPFN].vpn = vpn;
+  PFNTable[firstEmptyPFN].isUsed = true;
+  // update thread's page table
+  thread->VPNToPFN[vpn].physicalFrameNumber = firstEmptyPFN;
+  thread->VPNToPFN[vpn].present = 1;
 }
 
 // assign frames to thread to

@@ -108,6 +108,10 @@ void testSingleThreadedWriteHeapBeyondEndOfPage() {
     panicExpected = true;
     Thread* thread = createThread();
 
+    sprintf(buffer, "[testSingleThreadedWriteHeapBeyondEndOfPage] {thread: %d}.\n", thread->threadId);
+    logData(buffer);
+    flushLog();
+
     sprintf(buffer, "\n[testSingleThreadedWriteHeapBeyondEndOfPage] {line: %d}.\n", __LINE__);
     logData(buffer);
     flushLog();
